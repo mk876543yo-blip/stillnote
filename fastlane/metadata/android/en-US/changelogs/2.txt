@@ -1,0 +1,1 @@
+Removed the local model connector and app network access. Flashcards are created on-device from note definitions and key sentences. Updated Android release and project documentation.
