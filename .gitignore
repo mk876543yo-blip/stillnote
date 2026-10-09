@@ -3,6 +3,7 @@ Thumbs.db
 .build-tools/
 node_modules/
 artifacts/
+_site/
 .flatpak-builder/
 flatpak-repo/
 flatpak-build/

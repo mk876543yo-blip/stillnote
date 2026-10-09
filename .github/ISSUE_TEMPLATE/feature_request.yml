@@ -1,0 +1,23 @@
+name: Feature request
+description: Suggest an improvement to Stillnote
+title: "[Feature]: "
+labels: [enhancement]
+body:
+  - type: textarea
+    id: need
+    attributes:
+      label: What would you like to do?
+      description: Describe the task or problem you are trying to solve.
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: What would make this easier?
+      description: Describe the change you have in mind. Screenshots or sketches are welcome.
+    validations:
+      required: true
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional context

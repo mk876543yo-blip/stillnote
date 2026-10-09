@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f7f7fb">
+  <meta name="description" content="Download Stillnote for Linux. Choose an AppImage, Debian package, RPM, Arch package, or Flatpak.">
+  <link rel="icon" href="../icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="../assets/site.css">
+  <title>Downloads — Stillnote</title>
+</head>
+<body>
+  <header class="site-header">
+    <a class="brand" href="../" aria-label="Stillnote home">
+      <img src="../icon.svg" width="36" height="36" alt="">
+      <span>stillnote</span>
+    </a>
+    <nav class="header-nav" aria-label="Main navigation">
+      <a href="../#features">Features</a>
+      <a class="nav-current" href="./" aria-current="page">Downloads</a>
+      <a href="https://github.com/mk876543yo-blip/stillnote">Source</a>
+    </nav>
+    <a class="button button-small button-quiet header-cta" href="../app/">Open the app <span aria-hidden="true">↗</span></a>
+  </header>
+
+  <main class="downloads-main page-width">
+    <div class="downloads-heading">
+      <a class="back-link" href="../"><span aria-hidden="true">←</span> Back to Stillnote</a>
+      <p class="eyebrow">GET THE DESKTOP APP</p>
+      <h1>Choose your download.</h1>
+      <p class="downloads-lede">Pick the package that matches your Linux distribution. The latest stable release is always linked here.</p>
+      <div class="release-status" id="release-status" role="status" aria-live="polite">Looking for the latest release…</div>
+    </div>
+
+    <div class="package-grid" id="package-grid">
+      <article class="package-card" data-package="appimage"><div class="package-icon violet">◈</div><div class="package-copy"><h2>AppImage</h2><p>Portable app for most Linux desktops. Mark the file executable before opening.</p><div class="package-links"><span class="download-loading">Loading release…</span></div></div></article>
+      <article class="package-card" data-package="deb"><div class="package-icon peach">▧</div><div class="package-copy"><h2>Debian / Ubuntu</h2><p>For Debian, Ubuntu, Linux Mint, and compatible distributions. Installs system dependencies through APT.</p><div class="package-links"><span class="download-loading">Loading release…</span></div></div></article>
+      <article class="package-card" data-package="rpm"><div class="package-icon mint">▧</div><div class="package-copy"><h2>Fedora / RPM</h2><p>For Fedora and compatible RPM systems. WebKitGTK 4.1 must be available on the system.</p><div class="package-links"><span class="download-loading">Loading release…</span></div></div></article>
+      <article class="package-card" data-package="arch"><div class="package-icon lavender">▤</div><div class="package-copy"><h2>Arch / Garuda</h2><p>Installable Pacman package for x86_64. The source repository also includes a PKGBUILD.</p><div class="package-links"><span class="download-loading">Loading release…</span></div></div></article>
+      <article class="package-card" data-package="flatpak"><div class="package-icon blue">▣</div><div class="package-copy"><h2>Flatpak</h2><p>Portable sandboxed bundle for GNOME runtime 50. x86_64 and ARM64 builds are available.</p><div class="package-links"><span class="download-loading">Loading release…</span></div></div></article>
+    </div>
+
+    <section class="install-note">
+      <div><p class="eyebrow">NEED HELP INSTALLING?</p><h2>Find the steps for your package.</h2><p>The README covers installation, prerequisites, checksums, backups, and troubleshooting.</p></div>
+      <a class="button button-secondary" href="https://github.com/mk876543yo-blip/stillnote#install-from-a-release">Read installation guide <span aria-hidden="true">↗</span></a>
+    </section>
+    <p class="download-footnote">Stillnote's desktop packages currently support Linux. You can use the browser app on desktop and mobile. Notes in the browser and desktop application are stored separately on each device.</p>
+  </main>
+
+  <footer class="site-footer">
+    <div class="footer-inner page-width">
+      <a class="brand footer-brand" href="../"><img src="../icon.svg" width="28" height="28" alt=""><span>stillnote</span></a>
+      <span>Downloads are published from tagged source releases.</span>
+      <nav aria-label="Footer navigation"><a href="https://github.com/mk876543yo-blip/stillnote/releases">All releases</a><a href="https://github.com/mk876543yo-blip/stillnote/issues">Support</a></nav>
+    </div>
+  </footer>
+  <script src="../assets/downloads.js" defer></script>
+</body>
+</html>

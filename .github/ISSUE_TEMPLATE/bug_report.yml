@@ -1,0 +1,57 @@
+name: Bug report
+description: Report a reproducible problem in Stillnote
+title: "[Bug]: "
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please don't attach a workspace backup or private notes. Include only information needed to reproduce the problem.
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect to happen?
+      description: Describe the result you expected.
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: What happened instead?
+      description: Include any error message and the steps to reproduce it.
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Stillnote version
+      placeholder: "1.1.0"
+    validations:
+      required: true
+  - type: input
+    id: system
+    attributes:
+      label: Operating system and architecture
+      placeholder: "Fedora 42, x86_64"
+    validations:
+      required: true
+  - type: dropdown
+    id: install
+    attributes:
+      label: How did you open Stillnote?
+      options:
+        - Linux AppImage
+        - Debian or Ubuntu package
+        - RPM package
+        - Arch or Garuda package
+        - Flatpak
+        - Browser/PWA
+        - Built from source
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: extra
+    attributes:
+      label: Additional context
+      description: Add relevant details or a screenshot with any private content removed.

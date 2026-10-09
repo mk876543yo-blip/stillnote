@@ -1,27 +1,61 @@
-# Stillnote 1.1.0
+# Stillnote
 
-Stillnote is a private, local-first workspace for notes and focused study. The existing HTML, CSS, and JavaScript app now runs both in a Tauri 2 Linux desktop window and as the existing browser/PWA version.
+<p align="center">
+  <img src="icon.svg" width="72" height="72" alt="Stillnote icon"><br>
+  <strong>A quiet, private workspace for notes, study, and focus.</strong><br>
+  Write things down, turn ideas into flashcards, and make room to concentrate.<br><br>
+  <a href="https://mk876543yo-blip.github.io/stillnote/">Website</a> ·
+  <a href="https://mk876543yo-blip.github.io/stillnote/app/">Open the web app</a> ·
+  <a href="https://mk876543yo-blip.github.io/stillnote/downloads/">Download packages</a> ·
+  <a href="https://github.com/mk876543yo-blip/stillnote/releases/latest">Latest release</a>
+</p>
 
-Notes, collections, flashcards, themes, study settings, and focus statistics use browser storage. Images and videos are stored as blobs in IndexedDB. The desktop WebKit profile persists in the operating system's per-user application data directory; neither notes nor media are written into the installation directory. Stillnote does not require an account, cloud service, internet connection, Python server, or Node server at runtime.
+<p align="center">
+  <a href="https://github.com/mk876543yo-blip/stillnote/releases/latest"><img alt="Latest release" src="https://img.shields.io/github/v/release/mk876543yo-blip/stillnote?label=latest%20release"></a>
+  <a href="https://mk876543yo-blip.github.io/stillnote/"><img alt="Website status" src="https://img.shields.io/website?url=https%3A%2F%2Fmk876543yo-blip.github.io%2Fstillnote%2F&label=website"></a>
+  <a href="LICENSE"><img alt="MIT license" src="https://img.shields.io/badge/license-MIT-6658d3.svg"></a>
+</p>
+
+Stillnote runs as a browser/PWA workspace and a native Tauri 2 desktop app for Linux. It is local-first: notes and attachments stay in the browser or desktop profile on your device. Stillnote does not create an account or sync your workspace to a cloud service.
+
+## What you can do
+
+- Write and organize Markdown notes in collections, with search, tags, and media attachments.
+- Turn notes into flashcards and review them on a spaced schedule.
+- Work in focused sessions and see your study activity on this device.
+- Choose a theme, use keyboard shortcuts, and export or restore a complete workspace backup.
+- Open the browser app on desktop or mobile, or install the Linux desktop package that fits your system.
+
+## Privacy and storage
+
+Notes, collections, flashcards, themes, study settings, and focus statistics use browser storage. Images and videos are stored in IndexedDB. The desktop WebKit profile persists in the operating system's per-user application data directory; neither notes nor media are written into the installation directory. The web app and desktop app have separate workspaces, so export a backup in one and import it into the other to move your notes. Dictation depends on the browser's speech-recognition support and may use an online speech provider.
+
+The browser app needs an internet connection for its first load. After it has loaded, its app shell is cached for offline use. The desktop app works offline and does not require a Python or Node server.
+
+## Download Stillnote
+
+**[Get the latest Linux packages](https://mk876543yo-blip.github.io/stillnote/downloads/)** · [Browse release notes and all assets](https://github.com/mk876543yo-blip/stillnote/releases/latest)
+
+The download page always follows the latest stable GitHub Release and offers matching packages for x86_64 and ARM64 where available. Every release includes SHA-256 checksums.
 
 ## Linux support
 
-Release builds target x86_64 and ARM64 for AppImage, `.deb`, `.rpm`, and Flatpak. The Arch/Garuda package and optional Snap currently target x86_64:
+Release builds target x86_64 and ARM64 for AppImage, `.deb`, `.rpm`, and Flatpak. The Arch/Garuda package currently targets x86_64:
 
 - AppImage for a broad range of Linux desktops.
 - `.deb` for Debian, Ubuntu, Linux Mint, and compatible systems.
 - `.rpm` for Fedora and compatible RPM systems. The package declares WebKitGTK 4.1 and GTK 3 dependencies; openSUSE package naming can differ, so install the matching WebKitGTK 4.1 runtime if the package manager does not resolve it automatically.
 - Arch `PKGBUILD`, which makes a normal Pacman package for Arch and Garuda Linux.
 - Flatpak built against the maintained GNOME 50 runtime and SDK.
-- Optional Snapcraft package definition for strict confinement. The release workflow does not build or upload Snap packages.
+- Optional Snapcraft package definition for strict confinement. Snap packages are not built or uploaded by the release workflow.
 
 Tauri's Linux AppImage tooling cannot cross-compile ARM, so CI builds ARM64 natively on GitHub's ARM runners. The AppImage bundles its application libraries and, for video playback, its media framework. The `.deb`, `.rpm`, Arch, Snap, and development builds use WebKitGTK 4.1 and GTK 3 supplied by their host/runtime packages. AppImage builds use Ubuntu 22.04 as the compatibility baseline. Older systems need glibc 2.35 or newer. The AppImage runtime may also need FUSE 2 (`libfuse2` on Debian/Ubuntu); if FUSE is unavailable, try `./Stillnote-*-Linux-x86_64.AppImage --appimage-extract` and launch the extracted `AppRun`.
 
 Video playback depends on the WebKitGTK/GStreamer codecs available in the package or on the host. Dictation depends on WebKitGTK's support for the browser speech-recognition API and may require an online speech provider; notes, editing, search, attachments, flashcards, focus sessions, themes, and backups work offline.
 
-## Install a release
+## Install from a release
 
-Download the matching x86_64 file from the GitHub Actions artifact for a tagged build. The workflow keeps artifacts in Actions and does not create or publish GitHub Releases.
+Choose your distribution and architecture on the [Stillnote download page](https://mk876543yo-blip.github.io/stillnote/downloads/), or open [GitHub Releases](https://github.com/mk876543yo-blip/stillnote/releases/latest). Tagged builds publish installable packages and a `SHA256SUMS` file there. Verify a download from the directory containing the package with `sha256sum -c SHA256SUMS`.
 
 ### AppImage
 
@@ -208,7 +242,7 @@ Browser and desktop storage use different origins and are not shared. To move ex
 
 Export another backup before switching computers, clearing browser data, changing package formats, or removing the app. Removing the `.deb`, `.rpm`, or Arch package leaves Stillnote's per-user data in place. Flatpak and Snap keep data in sandbox-specific locations and may apply their own removal policy. Export/import is the supported way to move data between these installs.
 
-The browser/PWA version remains available. For local development, serve the repository root over HTTP using any static file server (for example, `python3 -m http.server 8000`) and open `http://127.0.0.1:8000`; the installed desktop app itself does not use that server.
+The [browser/PWA app](https://mk876543yo-blip.github.io/stillnote/app/) remains available. For local development, serve the repository root over HTTP using any static file server (for example, `python3 -m http.server 8000`) and open `http://127.0.0.1:8000`; the installed desktop app itself does not use that server.
 
 ## Troubleshooting and limitations
 
