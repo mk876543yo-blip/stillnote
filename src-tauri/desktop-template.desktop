@@ -1,0 +1,10 @@
+[Desktop Entry]
+Name={{name}}
+Comment={{comment}}
+Exec={{exec}}
+Icon={{icon}}
+Terminal=false
+Type=Application
+Categories={{categories}}
+StartupWMClass=stillnote
+Keywords=notes;study;flashcards;writing;

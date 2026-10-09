@@ -1,0 +1,40 @@
+app-id: io.github.mk876543yoblip.stillnote
+runtime: org.gnome.Platform
+runtime-version: '50'
+sdk: org.gnome.Sdk
+sdk-extensions:
+  - org.freedesktop.Sdk.Extension.rust-stable
+command: stillnote
+finish-args:
+  - --share=ipc
+  - --socket=wayland
+  - --socket=fallback-x11
+  - --socket=pulseaudio
+  - --device=dri
+  - --filesystem=xdg-download
+modules:
+  - name: stillnote
+    buildsystem: simple
+    build-options:
+      append-path: /usr/lib/sdk/rust-stable/bin
+      env:
+        CARGO_HOME: /run/build/stillnote/cargo
+        CARGO_NET_OFFLINE: 'true'
+    build-commands:
+      - install -Dm0644 cargo/config .cargo/config.toml
+      - ./scripts/stage-frontend.sh
+      - cargo --offline fetch --manifest-path src-tauri/Cargo.toml --locked
+      - cargo build --offline --manifest-path src-tauri/Cargo.toml --release --locked
+      - install -Dm755 src-tauri/target/release/stillnote /app/bin/stillnote
+      - install -Dm644 packaging/linux/stillnote.desktop /app/share/applications/io.github.mk876543yoblip.stillnote.desktop
+      - install -Dm644 icon.svg /app/share/icons/hicolor/scalable/apps/io.github.mk876543yoblip.stillnote.svg
+      - install -Dm644 src-tauri/icons/32x32.png /app/share/icons/hicolor/32x32/apps/io.github.mk876543yoblip.stillnote.png
+      - install -Dm644 src-tauri/icons/128x128.png /app/share/icons/hicolor/128x128/apps/io.github.mk876543yoblip.stillnote.png
+      - install -Dm644 src-tauri/icons/128x128@2x.png /app/share/icons/hicolor/256x256/apps/io.github.mk876543yoblip.stillnote.png
+      - install -Dm644 packaging/flatpak/io.github.mk876543yoblip.stillnote.metainfo.xml /app/share/metainfo/io.github.mk876543yoblip.stillnote.metainfo.xml
+      - install -Dm644 LICENSE /app/share/licenses/stillnote/LICENSE
+    sources:
+      - type: dir
+        path: ../..
+      - type: file
+        path: cargo-sources.json

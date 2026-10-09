@@ -1,0 +1,60 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Stillnote",
+  "version": "1.1.0",
+  "identifier": "io.github.mk876543yoblip.stillnote",
+  "build": {
+    "beforeDevCommand": "./scripts/stage-frontend.sh",
+    "beforeBuildCommand": "./scripts/stage-frontend.sh",
+    "frontendDist": "frontend-dist"
+  },
+  "app": {
+    "withGlobalTauri": false,
+    "windows": [
+      {
+        "label": "main",
+        "title": "Stillnote",
+        "width": 1440,
+        "height": 940,
+        "minWidth": 940,
+        "minHeight": 640,
+        "center": true,
+        "resizable": true
+      }
+    ],
+    "security": {
+      "csp": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' asset: blob: data:; media-src 'self' asset: blob: data:; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'",
+      "freezePrototype": true
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": ["appimage", "deb", "rpm"],
+    "category": "Office",
+    "shortDescription": "Private local notes and study workspace",
+    "longDescription": "A private workspace for notes, collections, flashcards, focus sessions, and study insights. Notes and media are stored locally on this device.",
+    "publisher": "Stillnote contributors",
+    "homepage": "https://github.com/mk876543yo-blip/stillnote",
+    "license": "MIT",
+    "licenseFile": "../LICENSE",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.png"
+    ],
+    "linux": {
+      "appimage": {
+        "bundleMediaFramework": true
+      },
+      "deb": {
+        "depends": ["libwebkit2gtk-4.1-0", "libgtk-3-0"],
+        "desktopTemplate": "desktop-template.desktop"
+      },
+      "rpm": {
+        "depends": ["(webkit2gtk4.1 or libwebkit2gtk-4_1-0)", "gtk3"],
+        "desktopTemplate": "desktop-template.desktop"
+      }
+    }
+  }
+}

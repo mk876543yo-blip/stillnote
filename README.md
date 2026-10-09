@@ -1,41 +1,223 @@
-# Stillnote 1.0.0
+# Stillnote 1.1.0
 
-Stillnote is a private notes app for Windows and Linux. Write and organize notes, attach images and videos, browse everything with **Ctrl+K**, and choose from six color themes. Your notes stay in this browser on this computer.
+Stillnote is a private, local-first workspace for notes and focused study. The existing HTML, CSS, and JavaScript app now runs both in a Tauri 2 Linux desktop window and as the existing browser/PWA version.
 
-Python 3 is required to run the local app server.
+Notes, collections, flashcards, themes, study settings, and focus statistics use browser storage. Images and videos are stored as blobs in IndexedDB. The desktop WebKit profile persists in the operating system's per-user application data directory; neither notes nor media are written into the installation directory. Stillnote does not require an account, cloud service, internet connection, Python server, or Node server at runtime.
 
-## Windows
+## Linux support
 
-1. Download and extract the repository.
-2. Open PowerShell in the extracted folder and run:
+Release builds target x86_64 and ARM64 for AppImage, `.deb`, `.rpm`, and Flatpak. The Arch/Garuda package and optional Snap currently target x86_64:
 
-   ```powershell
-   py -m http.server 8000 --bind 127.0.0.1
-   ```
+- AppImage for a broad range of Linux desktops.
+- `.deb` for Debian, Ubuntu, Linux Mint, and compatible systems.
+- `.rpm` for Fedora and compatible RPM systems. The package declares WebKitGTK 4.1 and GTK 3 dependencies; openSUSE package naming can differ, so install the matching WebKitGTK 4.1 runtime if the package manager does not resolve it automatically.
+- Arch `PKGBUILD`, which makes a normal Pacman package for Arch and Garuda Linux.
+- Flatpak built against the maintained GNOME 50 runtime and SDK.
+- Optional Snapcraft package definition for strict confinement. The release workflow does not build or upload Snap packages.
 
-3. Open <http://127.0.0.1:8000> in Chrome or Edge. Use the install icon in the address bar to add Stillnote to your desktop.
+Tauri's Linux AppImage tooling cannot cross-compile ARM, so CI builds ARM64 natively on GitHub's ARM runners. The AppImage bundles its application libraries and, for video playback, its media framework. The `.deb`, `.rpm`, Arch, Snap, and development builds use WebKitGTK 4.1 and GTK 3 supplied by their host/runtime packages. AppImage builds use Ubuntu 22.04 as the compatibility baseline. Older systems need glibc 2.35 or newer. The AppImage runtime may also need FUSE 2 (`libfuse2` on Debian/Ubuntu); if FUSE is unavailable, try `./Stillnote-*-Linux-x86_64.AppImage --appimage-extract` and launch the extracted `AppRun`.
 
-## Linux
+Video playback depends on the WebKitGTK/GStreamer codecs available in the package or on the host. Dictation depends on WebKitGTK's support for the browser speech-recognition API and may require an online speech provider; notes, editing, search, attachments, flashcards, focus sessions, themes, and backups work offline.
 
-1. Download and extract the repository.
-2. Open a terminal in the extracted folder and run:
+## Install a release
 
-   ```bash
-   python3 -m http.server 8000 --bind 127.0.0.1
-   ```
+Download the matching x86_64 file from the GitHub Actions artifact for a tagged build. The workflow keeps artifacts in Actions and does not create or publish GitHub Releases.
 
-3. Open <http://127.0.0.1:8000> in Chrome or Edge. Use the install icon in the address bar to add Stillnote to your desktop.
+### AppImage
 
-Keep the terminal open while using Stillnote. After the first visit, the app can reopen offline in supported browsers.
+```bash
+chmod +x Stillnote-1.1.0-Linux-x86_64.AppImage
+./Stillnote-1.1.0-Linux-x86_64.AppImage
+```
 
-## Using Stillnote
+AppImage is portable and does not install files into the system. It bundles its application libraries and media framework, but still relies on a compatible Linux desktop, glibc, and (for normal mounting) FUSE 2.
 
-- Select **New note** to write. Notes save as you type.
-- Create collections to organize notes.
-- Select **Browse notes** or press **Ctrl+K** to search note text, titles, tags, collections, and attached file names.
-- Select **Media** in a note to add images or videos.
-- Open **Settings** to choose a theme or import and export a backup.
+### Debian, Ubuntu, and Linux Mint
 
-Notes and attached media stay in your browser on this computer. Backups include your notes, settings, and media. Export a backup before clearing browser data or moving to another computer.
+```bash
+sudo apt install ./Stillnote-1.1.0-Linux-x86_64.deb
+```
 
-See [LICENSE](LICENSE) for the license.
+APT resolves the declared WebKitGTK 4.1 and GTK 3 dependencies. To remove it later, run `sudo apt remove stillnote`.
+
+### Fedora and RPM systems
+
+Fedora:
+
+```bash
+sudo dnf install ./Stillnote-1.1.0-Linux-x86_64.rpm
+```
+
+openSUSE:
+
+```bash
+sudo zypper install ./Stillnote-1.1.0-Linux-x86_64.rpm
+```
+
+The package manager handles upgrades and removal. WebKitGTK 4.1 is packaged under different names across RPM distributions; Fedora uses `webkit2gtk4.1`, while openSUSE uses `libwebkit2gtk-4_1-0`.
+
+### Arch Linux and Garuda Linux
+
+From the Stillnote repository root, run:
+
+```bash
+makepkg -si
+```
+
+`makepkg` builds the checked-out source tree and creates an installable `.pkg.tar.zst` package. When used with only the PKGBUILD, it fetches the matching versioned official Git tag. Pacman tracks the package for upgrades and removal. Install a locally built package with `pacman -U`; remove it with:
+
+```bash
+sudo pacman -U ./stillnote-1.1.0-1-x86_64.pkg.tar.zst
+sudo pacman -R stillnote
+```
+
+Later builds can be upgraded with another `pacman -U`.
+
+Build prerequisites on Arch/Garuda are `base-devel`, `rust`, `gtk3`, `webkit2gtk-4.1`, and `hicolor-icon-theme`. For example:
+
+```bash
+sudo pacman -S --needed base-devel rust gtk3 webkit2gtk-4.1 hicolor-icon-theme
+makepkg -si
+```
+
+### Flatpak
+
+Add Flathub and install the GNOME 50 runtime once, then install the downloaded bundle for the current user:
+
+```bash
+flatpak remote-add --user --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
+flatpak install --user flathub org.gnome.Platform//50
+flatpak install --user ./Stillnote-1.1.0-Linux-x86_64.flatpak
+flatpak run io.github.mk876543yoblip.stillnote
+```
+
+Remove it with `flatpak uninstall --user io.github.mk876543yoblip.stillnote`. The sandbox has no network access. It can use Wayland or X11, audio playback, the user's Downloads folder for backup export, and desktop file-picker portals; application data remains in Flatpak's persistent per-app data directory.
+
+### Snap (optional)
+
+Snapcraft must be installed and configured on the build machine. Build and locally install the strict-confinement package with:
+
+```bash
+snapcraft
+sudo snap install --dangerous ./stillnote_1.1.0_amd64.snap
+```
+
+Remove it with `sudo snap remove stillnote`. Snapcraft packaging is an optional manual build path and is not built by the tag workflow.
+
+## Build from source
+
+### Prerequisites
+
+- Rust stable 1.90 or newer and Cargo.
+- Tauri 2 Linux development packages.
+- Node.js 22 and npm for the pinned Tauri CLI wrapper. Node is a development/build dependency only.
+- For AppImage video support, GStreamer base and good plugins on the Ubuntu 22.04 build host.
+
+Arch/Garuda prerequisites:
+
+```bash
+sudo pacman -Syu --needed base-devel curl file gtk3 hicolor-icon-theme \
+  libxdo openssl librsvg rust webkit2gtk-4.1 xdotool
+```
+
+Debian/Ubuntu prerequisites:
+
+```bash
+sudo apt update
+sudo apt install build-essential curl file libayatana-appindicator3-dev \
+  libfuse2 librsvg2-dev libssl-dev libwebkit2gtk-4.1-dev libxdo-dev \
+  pkg-config gstreamer1.0-plugins-base gstreamer1.0-plugins-good
+```
+
+### Run and build the desktop app
+
+```bash
+npm ci
+npm run dev
+```
+
+The Tauri CLI stages the local files and runs the desktop development session; no separate Python or Node server is needed. Build the native executable and the three Tauri bundles with:
+
+```bash
+npm run build
+npm run build:linux
+```
+
+Build one Linux bundle at a time if needed:
+
+```bash
+npm run tauri -- build --bundles appimage
+npm run tauri -- build --bundles deb
+npm run tauri -- build --bundles rpm
+```
+
+To also copy the bundles into consistently named files under `artifacts/`:
+
+```bash
+./scripts/build-linux-artifacts.sh
+```
+
+The script writes `Stillnote-1.1.0-Linux-x86_64.AppImage`, `.deb`, and `.rpm` on x86_64. Tauri places the original bundles under `src-tauri/target/release/bundle/`.
+
+### Build Arch package locally
+
+From the repository root:
+
+```bash
+makepkg -si
+```
+
+To build without installing it, use `makepkg -s`. The resulting package is `stillnote-1.1.0-1-x86_64.pkg.tar.zst`.
+
+### Build Flatpak locally
+
+Install Flatpak Builder and the matching GNOME runtime, SDK, and Rust extension. The Rust extension branch matches the Freedesktop SDK branch used by GNOME 50:
+
+```bash
+sudo apt install flatpak flatpak-builder
+flatpak remote-add --user --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
+flatpak install --user flathub org.gnome.Platform//50 org.gnome.Sdk//50 \
+  org.freedesktop.Sdk.Extension.rust-stable//25.08
+flatpak-builder --user --force-clean --repo=flatpak-repo flatpak-build \
+  packaging/flatpak/io.github.mk876543yoblip.stillnote.yml
+flatpak build-bundle --arch=x86_64 flatpak-repo \
+  Stillnote-1.1.0-Linux-x86_64.flatpak \
+  io.github.mk876543yoblip.stillnote stable
+```
+
+The committed Cargo lockfile and generated `cargo-sources.json` pin Rust crate versions and source checksums. After changing Rust dependencies, regenerate the source list with `./scripts/update-flatpak-cargo-sources.sh`, then build again. The script uses the official `flatpak-cargo-generator.py` from [flatpak-builder-tools](https://github.com/flatpak/flatpak-builder-tools/tree/master/cargo) at a pinned revision. This helper is only used during packaging; it is not part of Stillnote.
+
+### Build Snap locally
+
+With Snapcraft installed, use:
+
+```bash
+snapcraft
+```
+
+The Snap definition builds the same locked Rust source, stages WebKitGTK/GTK, and uses strict confinement. The `home` interface is used for user-selected attachments and backup files; Stillnote does not request network access.
+
+## Safe migration from the browser version
+
+Browser and desktop storage use different origins and are not shared. To move existing notes safely:
+
+1. Open the current browser/PWA Stillnote and go to **Settings → Export backup**.
+2. Keep the downloaded JSON backup somewhere safe. It contains notes, collections, flashcards, settings, study statistics, and attached image/video data.
+3. Open Stillnote Desktop and choose **Settings → Import backup**.
+4. Select the JSON file and confirm. Import replaces the desktop workspace, so export a desktop backup first if it already contains notes you want to keep.
+
+Export another backup before switching computers, clearing browser data, changing package formats, or removing the app. Removing the `.deb`, `.rpm`, or Arch package leaves Stillnote's per-user data in place. Flatpak and Snap keep data in sandbox-specific locations and may apply their own removal policy. Export/import is the supported way to move data between these installs.
+
+The browser/PWA version remains available. For local development, serve the repository root over HTTP using any static file server (for example, `python3 -m http.server 8000`) and open `http://127.0.0.1:8000`; the installed desktop app itself does not use that server.
+
+## Troubleshooting and limitations
+
+- If a `.deb`, `.rpm`, Arch package, Snap, or development build fails with a missing `libwebkit2gtk-4.1` or GTK library, install the distribution's WebKitGTK 4.1/GTK 3 runtime.
+- If an AppImage reports a missing FUSE library, install `libfuse2` where available or use its `--appimage-extract` option.
+- Older Linux releases can lack the required glibc symbols. The portable AppImage and native packages are built on Ubuntu 22.04 to keep the baseline low; they cannot run on glibc older than that baseline.
+- If video attachments show a black frame or no audio, install compatible GStreamer codecs for the host's WebKitGTK. AppImage includes the base/good media framework, but codec coverage varies.
+- Dictation support varies by WebKitGTK version and speech service availability.
+- Flatpak needs a working desktop portal for file selection. Its sandbox intentionally does not have general home-directory or network access.
+- The web/PWA and desktop app have separate storage. Do not remove browser data until a backup has been exported and restored in Desktop.
+
+See [LICENSE](LICENSE) for the project license.

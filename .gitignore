@@ -1,6 +1,16 @@
 .DS_Store
 Thumbs.db
 .build-tools/
+node_modules/
+artifacts/
+.flatpak-builder/
+flatpak-repo/
+flatpak-build/
+target/
+src-tauri/target/
+src-tauri/frontend-dist/
+*.flatpak
+*.snap
 **/.gradle/
 **/local.properties
 **/build/

@@ -1067,5 +1067,8 @@
   $('#theme-toggle').title = `Theme: ${THEME_LABELS[data.settings.theme]} · click to change`;
   setInterval(updateFocusDisplay, 300);
   renderWorkspace();
-  if ('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('./service-worker.js').catch(() => {});
+  const isTauriDesktop = Boolean(window.__TAURI_INTERNALS__) || location.protocol === 'tauri:' || location.hostname === 'tauri.localhost';
+  if ('serviceWorker' in navigator && !isTauriDesktop && /^https?:$/.test(location.protocol)) {
+    navigator.serviceWorker.register('./service-worker.js').catch(() => {});
+  }
 })();

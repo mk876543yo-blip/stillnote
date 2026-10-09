@@ -1,0 +1,11 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Stillnote
+Comment=Private local notes and study workspace
+Exec=stillnote
+Icon=stillnote
+Terminal=false
+Categories=Office;
+Keywords=notes;study;flashcards;writing;
+StartupWMClass=stillnote

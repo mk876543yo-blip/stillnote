@@ -1,0 +1,128 @@
+name: Linux release packages
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: read
+
+jobs:
+  linux:
+    name: AppImage, DEB, RPM (${{ matrix.arch }})
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: ubuntu-22.04
+            arch: x86_64
+          - runner: ubuntu-22.04-arm
+            arch: aarch64
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Verify release version
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          cargo_version="$(sed -n 's/^version = "\([^"]*\)"/\1/p' src-tauri/Cargo.toml | head -n 1)"
+          test "$version" = "$cargo_version"
+      - name: Install Tauri Linux prerequisites
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes \
+            build-essential curl file libayatana-appindicator3-dev libfuse2 \
+            librsvg2-dev libssl-dev libwebkit2gtk-4.1-dev libxdo-dev pkg-config \
+            rpm gstreamer1.0-plugins-base gstreamer1.0-plugins-good
+      - run: npm ci
+      - name: Build and name packages
+        run: ./scripts/build-linux-artifacts.sh
+      - name: Validate package metadata
+        run: |
+          dpkg-deb --info artifacts/*.deb
+          rpm -qpi artifacts/*.rpm
+          rpm -qp --requires artifacts/*.rpm
+          file artifacts/*
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Stillnote-${{ github.ref_name }}-Linux-${{ matrix.arch }}
+          path: artifacts/*
+          if-no-files-found: error
+          retention-days: 30
+
+  arch:
+    name: Arch / Garuda package (x86_64)
+    runs-on: ubuntu-22.04
+    container:
+      image: archlinux:base-devel
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install native build requirements
+        run: |
+          pacman -Syu --needed --noconfirm \
+            git gtk3 hicolor-icon-theme libxdo openssl librsvg rust webkit2gtk-4.1
+      - name: Build a real Pacman package
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          pkgver="$(sed -n 's/^pkgver=//p' PKGBUILD | head -n 1)"
+          test "$version" = "$pkgver"
+          useradd --create-home builder
+          chown -R builder:builder "$GITHUB_WORKSPACE"
+          runuser -u builder -- makepkg --cleanbuild --noconfirm
+      - name: Name package artifact
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          mkdir -p artifacts
+          package="$(find . -maxdepth 1 -type f -name 'stillnote-*.pkg.tar.zst' -print -quit)"
+          test -n "$package"
+          cp "$package" "artifacts/Stillnote-${version}-Arch-x86_64.pkg.tar.zst"
+          pacman -Qip "artifacts/Stillnote-${version}-Arch-x86_64.pkg.tar.zst"
+          pacman -Qlp "artifacts/Stillnote-${version}-Arch-x86_64.pkg.tar.zst"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Stillnote-${{ github.ref_name }}-Arch-x86_64
+          path: artifacts/*
+          if-no-files-found: error
+          retention-days: 30
+
+  flatpak:
+    name: Flatpak (${{ matrix.arch }})
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: ubuntu-24.04
+            arch: x86_64
+          - runner: ubuntu-24.04-arm
+            arch: aarch64
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Flatpak build tools
+        run: sudo apt-get update && sudo apt-get install --yes flatpak flatpak-builder
+      - name: Install the GNOME runtime and Rust SDK extension
+        run: |
+          flatpak remote-add --user --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
+          flatpak install --user --noninteractive flathub \
+            org.gnome.Platform//50 org.gnome.Sdk//50 \
+            org.freedesktop.Sdk.Extension.rust-stable//25.08
+      - name: Build Flatpak bundle
+        run: |
+          flatpak-builder --user --force-clean --repo=flatpak-repo \
+            flatpak-build packaging/flatpak/io.github.mk876543yoblip.stillnote.yml
+          version="${GITHUB_REF_NAME#v}"
+          mkdir -p artifacts
+          flatpak build-bundle --arch=${{ matrix.arch }} flatpak-repo \
+            "artifacts/Stillnote-${version}-Linux-${{ matrix.arch }}.flatpak" \
+            io.github.mk876543yoblip.stillnote stable
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Stillnote-${{ github.ref_name }}-Flatpak-${{ matrix.arch }}
+          path: artifacts/*
+          if-no-files-found: error
+          retention-days: 30

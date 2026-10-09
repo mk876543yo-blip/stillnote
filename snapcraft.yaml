@@ -1,0 +1,55 @@
+name: stillnote
+base: core22
+version: '1.1.0'
+summary: Private local notes and study workspace
+description: |
+  Stillnote is a local-first workspace for notes, collections, flashcards,
+  focus sessions, and study insights. Notes and attached media stay on this device.
+grade: stable
+confinement: strict
+architectures:
+  - build-on: [amd64]
+    run-on: [amd64]
+
+layout:
+  /usr/lib/$SNAPCRAFT_ARCH_TRIPLET/webkit2gtk-4.1:
+    bind: $SNAP/usr/lib/$SNAPCRAFT_ARCH_TRIPLET/webkit2gtk-4.1
+
+apps:
+  stillnote:
+    command: usr/bin/stillnote
+    desktop: usr/share/applications/stillnote.desktop
+    extensions: [gnome]
+    plugs:
+      - home
+
+parts:
+  stillnote:
+    plugin: dump
+    source: .
+    build-snaps:
+      - rustup/latest/stable
+    build-packages:
+      - build-essential
+      - curl
+      - file
+      - libayatana-appindicator3-dev
+      - librsvg2-dev
+      - libssl-dev
+      - libwebkit2gtk-4.1-dev
+      - libxdo-dev
+      - pkg-config
+    stage-packages:
+      - libgtk-3-0
+      - libwebkit2gtk-4.1-0
+    override-build: |
+      set -eu
+      ./scripts/stage-frontend.sh
+      cargo build --manifest-path src-tauri/Cargo.toml --release --locked
+      install -Dm755 src-tauri/target/release/stillnote "$SNAPCRAFT_PART_INSTALL/usr/bin/stillnote"
+      install -Dm644 packaging/linux/stillnote.desktop "$SNAPCRAFT_PART_INSTALL/usr/share/applications/stillnote.desktop"
+      install -Dm644 icon.svg "$SNAPCRAFT_PART_INSTALL/usr/share/icons/hicolor/scalable/apps/stillnote.svg"
+      install -Dm644 src-tauri/icons/32x32.png "$SNAPCRAFT_PART_INSTALL/usr/share/icons/hicolor/32x32/apps/stillnote.png"
+      install -Dm644 src-tauri/icons/128x128.png "$SNAPCRAFT_PART_INSTALL/usr/share/icons/hicolor/128x128/apps/stillnote.png"
+      install -Dm644 src-tauri/icons/128x128@2x.png "$SNAPCRAFT_PART_INSTALL/usr/share/icons/hicolor/256x256/apps/stillnote.png"
+      install -Dm644 LICENSE "$SNAPCRAFT_PART_INSTALL/usr/share/licenses/stillnote/LICENSE"
