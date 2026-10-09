@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f5f6fa">
+  <meta name="description" content="A calm, private workspace for notes, focused study, and better recall.">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <title>Stillnote — your study space</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar" id="sidebar">
+      <a class="brand" href="#notes" aria-label="Stillnote home">
+        <span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 32 32" fill="none"><path d="M8 5.5h10.5L25 12v14.5H8V5.5Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M18 5.8V12h6.3M12 17h9M12 21h6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span>
+        <span class="brand-copy"><strong>stillnote</strong><small>YOUR STUDY SPACE</small></span>
+      </a>
+
+      <button class="new-note-button" id="new-note-button"><span class="plus-mark">＋</span><span>New note</span><kbd>Ctrl N</kbd></button>
+
+      <nav class="primary-nav" aria-label="Main navigation">
+        <button class="nav-item is-active" data-view="notes"><span class="nav-icon">▤</span><span>Notes</span><span class="nav-count" id="notes-count">0</span></button>
+        <button class="nav-item" data-view="flashcards"><span class="nav-icon">▣</span><span>Flashcards</span><span class="nav-count" id="cards-count">0</span></button>
+        <button class="nav-item" data-view="focus"><span class="nav-icon">◷</span><span>Focus room</span></button>
+        <button class="nav-item" data-view="insights"><span class="nav-icon">▥</span><span>Study insights</span></button>
+      </nav>
+
+      <div class="sidebar-section-heading">
+        <span>COLLECTIONS</span>
+        <button class="icon-button tiny" id="add-folder-button" aria-label="Add a collection" title="Add a collection">＋</button>
+      </div>
+      <div class="folder-list" id="folder-list"></div>
+      <div class="sidebar-spacer"></div>
+      <button class="nav-item trash-link" data-view="trash"><span class="nav-icon">⌑</span><span>Recently deleted</span></button>
+      <button class="nav-item settings-link" id="settings-button"><span class="nav-icon">⚙</span><span>Settings</span></button>
+      <div class="privacy-note"><span class="privacy-dot"></span><span>Private on this device</span></div>
+    </aside>
+
+    <main class="main-shell">
+      <header class="topbar">
+        <div class="crumbs"><span class="crumb-dot"></span><span id="topbar-context">My workspace</span><span class="crumb-separator">/</span><strong id="topbar-view">Notes</strong></div>
+        <div class="topbar-actions">
+          <button class="search-trigger" id="search-open" aria-label="Search notes"><span class="search-glyph">⌕</span><span>Search anything</span><kbd>Ctrl K</kbd></button>
+          <button class="icon-button top-icon" id="theme-toggle" aria-label="Switch theme" title="Switch theme"><span id="theme-icon">☾</span></button>
+          <button class="avatar-button" id="profile-button" aria-label="Open settings">M</button>
+        </div>
+      </header>
+      <div id="workspace" class="workspace" aria-live="polite"></div>
+    </main>
+  </div>
+
+  <div id="overlay-root"></div>
+  <div class="toast-region" id="toast-region" aria-live="polite" aria-atomic="true"></div>
+  <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,1 @@
+First release: notes, dictation, flashcards, focus timer, study insights, local Ollama support, and backup tools.

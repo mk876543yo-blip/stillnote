@@ -1,0 +1,10 @@
+Stillnote is a calm, local-first study space for notes and active recall.
+
+• Write notes with autosave, collections, tags, search, Markdown preview, templates, and a trash folder.
+• Dictate notes with Android speech recognition or browser speech input.
+• Turn notes into flashcards and review them with a spaced schedule.
+• Use a focus timer and study insights to keep a steady rhythm.
+• Export and import a backup whenever you need it.
+• Connect to Ollama running on your own device for summaries, explanations, quizzes, flashcards, and study guides.
+
+Notes are stored locally on your device. Stillnote does not require an account or an API key. Local AI is optional; study and note-taking features work without a model.
