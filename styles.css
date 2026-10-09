@@ -398,3 +398,186 @@ kbd { border: 1px solid var(--line-strong); border-radius: 5px; background: var(
   .overlay { padding: 8vh 12px 20px; }
   .toast-region { right: 10px; bottom: 67px; }
 }
+
+/* Desktop stays a roomy multi-pane workspace; mobile uses a list, editor, and touch navigation. */
+@media (min-width: 661px) {
+  body { font-size: 14px; }
+  .nav-item { font-size: 13px; }
+  .sidebar-section-heading { font-size: 10px; }
+  .privacy-note { font-size: 11px; }
+  .crumbs { font-size: 12px; }
+  .search-trigger { font-size: 12px; }
+  .pane-title-row h1 { font-size: 19px; }
+  .collection-caption { font-size: 12px; }
+  .filter-chip { font-size: 11px; }
+  .note-card-title { font-size: 13px; }
+  .note-card-preview { font-size: 11px; }
+  .note-card-meta { font-size: 10px; }
+  .empty-list { font-size: 12px; }
+  .editor-topline { font-size: 11px; }
+  .editor-action { font-size: 11px; }
+  .note-kicker, .note-kicker select { font-size: 11px; }
+  .editor-meta-row { font-size: 11px; }
+  .tag-chip, .tag-add { font-size: 10px; }
+  .note-body-input, .markdown-preview { font-size: 15px; }
+  .note-bottomline { font-size: 10px; }
+  .study-heading strong { font-size: 13px; }
+  .study-heading small, .study-tip-card p, .study-recall-card p { font-size: 10px; }
+  .study-tip-card small, .study-recall-card strong { font-size: 10px; }
+  .action-option { font-size: 11px; }
+  .page-eyebrow { font-size: 10px; }
+  .page-heading-row h1 { font-size: 29px; }
+  .page-subtitle { font-size: 13px; }
+  .primary-button, .secondary-button, .danger-button { font-size: 12px; }
+  .section-title-row h2 { font-size: 14px; }
+  .section-title-row span, .deck-picker, .deck-stats { font-size: 11px; }
+  .flashcard-content { font-size: clamp(19px, 2.2vw, 26px); }
+  .rating-button { font-size: 11px; }
+  .focus-settings h2 { font-size: 14px; }
+  .focus-settings p, .duration-row, .stat-line { font-size: 11px; }
+  .insight-stat small, .insight-stat span { font-size: 10px; }
+  .activity-line { font-size: 11px; }
+  .activity-date { font-size: 10px; }
+  .trash-row-main strong { font-size: 12px; }
+  .trash-row-main small { font-size: 10px; }
+  .trash-row-actions button { font-size: 10px; }
+}
+
+@media (max-width: 660px) {
+  html, body { width: 100%; min-width: 320px; height: 100%; overscroll-behavior: none; }
+  body { min-height: 100vh; min-height: 100dvh; font-size: 16px; }
+  .app-shell { height: 100vh; height: 100dvh; min-height: 0; }
+  .main-shell { min-height: 0; }
+  .topbar { height: 62px; flex-basis: 62px; padding: 0 14px; }
+  .crumbs { gap: 8px; font-size: 12px; }
+  .topbar-actions { gap: 7px; }
+  .search-trigger, .top-icon, .avatar-button { width: 40px; height: 40px; min-width: 40px; border-radius: 12px; }
+  .search-trigger { padding: 0; }
+  .search-glyph { font-size: 23px; }
+  .avatar-button { font-size: 13px; }
+  .workspace { padding: 0 0 calc(68px + env(safe-area-inset-bottom)); overflow-y: auto; overscroll-behavior: contain; }
+  .notes-layout { display: grid; min-height: 100%; grid-template-columns: minmax(0, 1fr); }
+  .notes-column { display: flex; min-height: 100%; flex-direction: column; padding: 19px 16px 16px; border: 0; background: var(--page); }
+  .pane-title-row { padding: 0 2px; }
+  .pane-title-row h1 { font-size: 25px; letter-spacing: -.6px; }
+  .pane-title-row .icon-button { width: 44px; height: 44px; border: 1px solid var(--line); border-radius: 13px; background: var(--paper); font-size: 24px; }
+  .collection-caption { margin: 4px 2px 15px; font-size: 13px; }
+  .mobile-collection-picker { justify-content: space-between; gap: 12px; margin: 0 2px 14px; font-size: 13px; }
+  .mobile-collection-picker select { min-height: 42px; flex: 1; padding: 0 12px; border-radius: 10px; font-size: 14px; }
+  .list-filter-row { gap: 5px; margin: 0 0 13px; padding: 4px; border-radius: 12px; }
+  .filter-chip { min-height: 40px; border-radius: 9px; font-size: 13px; }
+  .note-list { display: grid; align-content: start; gap: 9px; overflow: visible; padding: 0 0 14px; }
+  .note-card { width: 100%; min-width: 0; min-height: 100px; padding: 14px; border-color: var(--line); border-radius: 14px; background: var(--paper); text-align: left; }
+  .note-card-title { font-size: 15px; }
+  .note-card-preview { min-height: 0; margin: 8px 0 11px; font-size: 13px; line-height: 1.55; -webkit-line-clamp: 2; }
+  .note-card-meta { gap: 8px; font-size: 11px; }
+  .note-card-meta .meta-folder { max-width: 120px; }
+  .empty-list { padding: 25px 12px; font-size: 14px; }
+  .mobile-nav { position: fixed; z-index: 8; right: 0; bottom: 0; left: 0; display: flex; height: calc(68px + env(safe-area-inset-bottom)); align-items: stretch; justify-content: space-around; padding: 4px 6px env(safe-area-inset-bottom); border-top: 1px solid var(--line); background: var(--paper); box-shadow: 0 -5px 20px rgba(32,38,56,.06); }
+  .mobile-nav button { display: grid; min-width: 0; min-height: 54px; flex: 1; align-content: center; justify-items: center; gap: 4px; border: 0; border-radius: 12px; background: transparent; color: var(--muted); font-size: 10px; font-weight: 550; }
+  .mobile-nav button span:first-child { font-size: 19px; line-height: 1; }
+  .mobile-nav button.is-active { background: var(--accent-soft); color: var(--accent); font-weight: 700; }
+  .mobile-note-open .workspace { padding-bottom: env(safe-area-inset-bottom); }
+  .mobile-note-open .mobile-nav { display: none; }
+  .notes-layout:not(.mobile-editor-open) .editor-column,
+  .notes-layout:not(.mobile-editor-open) .study-column,
+  .notes-layout.mobile-editor-open .notes-column,
+  .notes-layout.mobile-editor-open .study-column { display: none; }
+  .notes-layout.mobile-editor-open .editor-column { display: flex; min-height: 100%; border: 0; }
+  .editor-topline { position: sticky; z-index: 2; top: 0; min-height: 58px; flex: 0 0 58px; gap: 6px; padding: 0 10px; background: var(--paper); }
+  .editor-topline-left { min-width: 54px; flex: 1; }
+  .mobile-editor-back { display: inline-flex; min-width: 54px; min-height: 42px; align-items: center; gap: 5px; padding: 0 7px; border: 0; border-radius: 10px; background: transparent; color: var(--accent); cursor: pointer; font-size: 15px; font-weight: 650; }
+  .mobile-editor-back:first-letter { font-size: 25px; }
+  .save-state { display: none; }
+  .editor-topline-actions { gap: 2px; }
+  .editor-action { width: 40px; min-width: 40px; min-height: 42px; padding: 0; border: 0; border-radius: 10px; font-size: 16px; }
+  .editor-action .action-label { display: none; }
+  .note-canvas { display: flex; width: 100%; min-height: 0; flex: 1; flex-direction: column; padding: 19px 20px 24px; }
+  .note-kicker { gap: 8px; margin-bottom: 15px; font-size: 12px; }
+  .note-kicker select { max-width: 180px; min-height: 36px; padding: 3px 24px 3px 8px; border-radius: 8px; font-size: 13px; }
+  .note-title-input { min-height: 50px; font-size: 28px; letter-spacing: -.9px; }
+  .editor-meta-row { gap: 9px; margin: 9px 0 17px; font-size: 12px; }
+  .tag-list { gap: 7px; margin-bottom: 14px; }
+  .tag-chip, .tag-add { padding: 7px 10px; border-radius: 8px; font-size: 12px; }
+  .note-body-input { min-height: 42vh; flex: 1; font-size: 16px; line-height: 1.75; }
+  .markdown-preview { min-height: 42vh; font-size: 16px; line-height: 1.75; }
+  .note-bottomline { min-height: 42px; padding: 0 16px; font-size: 11px; }
+  .note-bottomline-right { gap: 10px; }
+  .page-wrap { padding: 23px 17px 30px; }
+  .page-eyebrow { margin-bottom: 7px; font-size: 11px; }
+  .page-heading-row { align-items: flex-start; flex-direction: column; gap: 13px; margin-bottom: 18px; }
+  .page-heading-row h1 { font-size: 26px; letter-spacing: -.6px; }
+  .page-subtitle { margin-top: 6px; font-size: 13px; line-height: 1.55; }
+  .primary-button, .secondary-button, .danger-button { min-height: 46px; gap: 8px; padding: 0 15px; border-radius: 11px; font-size: 14px; }
+  .surface-card { border-radius: 15px; }
+  .deck-toolbar { gap: 13px; padding: 15px; }
+  .deck-picker { width: 100%; align-items: flex-start; flex-direction: column; gap: 7px; font-size: 13px; }
+  .deck-picker select { width: 100%; min-height: 44px; font-size: 14px; }
+  .deck-stats { gap: 7px; font-size: 11px; }
+  .review-stage { min-height: 320px; padding: 12px 0; }
+  .flashcard { min-height: 285px; padding: 38px 24px; border-radius: 18px; }
+  .flashcard-content { font-size: 21px; }
+  .flashcard-label, .flashcard-hint { font-size: 10px; }
+  .review-controls { gap: 7px; }
+  .rating-button { min-width: 68px; min-height: 44px; border-radius: 10px; font-size: 12px; }
+  .flashcard-extra-row { flex-wrap: wrap; font-size: 11px; }
+  .deck-row { min-width: 0; gap: 8px; padding: 12px; }
+  .deck-row-main strong { font-size: 12px; }
+  .deck-row-main small { font-size: 10px; }
+  .deck-row button { width: 40px; height: 40px; flex: 0 0 40px; font-size: 20px; }
+  .focus-grid { grid-template-columns: 1fr; gap: 12px; }
+  .focus-main { min-height: 410px; padding: 19px; }
+  .focus-clock-wrap { width: min(68vw, 245px); height: min(68vw, 245px); }
+  .focus-time { font-size: 44px; }
+  .focus-phase { font-size: 11px; }
+  .focus-subject label, .focus-settings p, .duration-row, .stat-line { font-size: 13px; }
+  .focus-subject input { min-height: 44px; font-size: 14px; }
+  .focus-settings { padding: 18px; }
+  .focus-settings h2 { font-size: 16px; }
+  .duration-row input { width: 76px; height: 42px; font-size: 14px; }
+  .focus-stats-card { gap: 14px; padding: 17px; }
+  .stat-line strong { font-size: 14px; }
+  .insight-grid { gap: 9px; }
+  .insight-stat { padding: 13px; }
+  .insight-stat small, .insight-stat span { font-size: 10px; }
+  .insight-stat strong { margin: 7px 0 3px; font-size: 23px; }
+  .activity-card { padding: 14px; }
+  .activity-line { font-size: 12px; }
+  .activity-date { font-size: 10px; }
+  .trash-row { align-items: flex-start; flex-wrap: wrap; gap: 9px; padding: 13px; }
+  .trash-row-main { flex-basis: calc(100% - 35px); }
+  .trash-row-main strong { font-size: 13px; }
+  .trash-row-main small { font-size: 11px; }
+  .trash-row-actions { width: 100%; justify-content: flex-end; }
+  .trash-row-actions button { min-height: 38px; padding: 0 10px; font-size: 11px; }
+  .modal { width: 100%; max-height: 88vh; max-height: 88dvh; border-radius: 18px 18px 0 0; }
+  .overlay { align-items: end; padding: 0; }
+  .modal-head { padding: 18px 18px 14px; }
+  .modal-head h2 { font-size: 17px; }
+  .modal-head p { font-size: 12px; }
+  .modal-body { padding: 17px 18px calc(20px + env(safe-area-inset-bottom)); }
+  .form-group { gap: 8px; margin-bottom: 16px; }
+  .form-group label { font-size: 13px; }
+  .form-hint, .info-callout { font-size: 11px; }
+  .form-group input, .form-group select, .form-group textarea { min-height: 44px; padding: 0 12px; border-radius: 10px; font-size: 14px; }
+  .form-group textarea { min-height: 100px; padding: 11px; }
+  .form-row { grid-template-columns: 1fr; gap: 0; }
+  .modal-actions { flex-wrap: wrap; gap: 9px; }
+  .toast-region { right: 12px; bottom: calc(78px + env(safe-area-inset-bottom)); left: 12px; }
+  .toast { max-width: none; padding: 13px 15px; font-size: 13px; }
+}
+
+@media (max-width: 380px) {
+  .topbar { padding-right: 10px; padding-left: 10px; }
+  .crumbs { gap: 6px; font-size: 11px; }
+  .topbar-actions { gap: 4px; }
+  .search-trigger, .top-icon, .avatar-button { width: 38px; min-width: 38px; height: 38px; }
+  .notes-column { padding-right: 12px; padding-left: 12px; }
+  .note-canvas { padding-right: 16px; padding-left: 16px; }
+  .mobile-nav { padding-right: 2px; padding-left: 2px; }
+  .mobile-nav button { font-size: 9px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+}

@@ -1,0 +1,1 @@
+Redesigned Android for phone use with a full-screen note editor, a vertical notes list, larger controls, bottom navigation, and hardware back support. Improved desktop readability, synchronized Android system bars with the selected theme, and refreshed the offline app cache.

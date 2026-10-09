@@ -45,10 +45,7 @@ public final class MainActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        Window window = getWindow();
-        window.setStatusBarColor(Color.rgb(243, 245, 249));
-        window.setNavigationBarColor(Color.rgb(243, 245, 249));
-        window.getDecorView().setSystemUiVisibility(android.view.View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR);
+        setSystemAppearance(false);
 
         webView = new WebView(this);
         webView.setLayoutParams(new ViewGroup.LayoutParams(
@@ -94,11 +91,25 @@ public final class MainActivity extends Activity {
 
     @Override
     public void onBackPressed() {
-        if (webView != null && webView.canGoBack()) {
-            webView.goBack();
-        } else {
-            super.onBackPressed();
+        if (webView == null) { super.onBackPressed(); return; }
+        if (webView.canGoBack()) { webView.goBack(); return; }
+        webView.evaluateJavascript(
+                "(function(){return !!(window.stillnoteHandleBack && window.stillnoteHandleBack());})()",
+                handled -> { if (!"true".equals(handled)) MainActivity.super.onBackPressed(); }
+        );
+    }
+
+    private void setSystemAppearance(boolean dark) {
+        Window window = getWindow();
+        int color = dark ? Color.rgb(23, 26, 36) : Color.rgb(243, 245, 249);
+        window.setStatusBarColor(color);
+        window.setNavigationBarColor(color);
+        if (webView != null) webView.setBackgroundColor(color);
+        int flags = dark ? 0 : android.view.View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && !dark) {
+            flags |= android.view.View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR;
         }
+        window.getDecorView().setSystemUiVisibility(flags);
     }
 
     @Override
@@ -204,6 +215,11 @@ public final class MainActivity extends Activity {
         @JavascriptInterface
         public void startDictation(String languageTag) {
             runOnUiThread(() -> launchSpeechRecognition(languageTag));
+        }
+
+        @JavascriptInterface
+        public void setTheme(String theme) {
+            runOnUiThread(() -> setSystemAppearance("dark".equals(theme)));
         }
 
         @JavascriptInterface

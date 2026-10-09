@@ -66,6 +66,7 @@
     view: 'notes',
     folder: 'All notes',
     listFilter: 'all',
+    mobileEditorOpen: false,
     selectedNoteId: data.notes.find(note => !note.isDeleted)?.id || null,
     preview: false,
     searchQuery: '',
@@ -168,6 +169,7 @@
 
   function renderWorkspace() {
     if (isRecording && recognition && (state.view !== 'notes' || state.selectedNoteId !== recordingNoteId)) recognition.stop();
+    document.body.classList.toggle('mobile-note-open', state.view === 'notes' && state.mobileEditorOpen);
     renderSidebar();
     if (state.view === 'notes') renderNotesView();
     else if (state.view === 'flashcards') renderFlashcardsView();
@@ -187,7 +189,7 @@
       document.body.append(mobile);
     }
     mobile.innerHTML = [
-      ['notes', '▤', 'Notes'], ['flashcards', '▣', 'Cards'], ['focus', '◷', 'Focus'], ['insights', '▥', 'Insights']
+      ['notes', '▤', 'Notes'], ['flashcards', '▣', 'Cards'], ['focus', '◷', 'Focus'], ['insights', '▥', 'Insights'], ['trash', '⌑', 'Trash']
     ].map(([view, icon, label]) => `<button data-mobile-view="${view}" class="${state.view === view ? 'is-active' : ''}"><span>${icon}</span><span>${label}</span></button>`).join('');
     mobile.hidden = !window.matchMedia('(max-width: 660px)').matches;
   }
@@ -200,7 +202,7 @@
     const listTitle = state.folder === 'All notes' ? 'All notes' : state.folder;
     const mobileCollectionOptions = [`<option value="All notes" ${state.folder === 'All notes' ? 'selected' : ''}>All collections</option>`, ...data.folders.map(folder => `<option value="${escapeHTML(folder)}" ${state.folder === folder ? 'selected' : ''}>${escapeHTML(folder)}</option>`), '<option value="__new__">＋ Create collection…</option>'].join('');
     const notePanel = note ? renderNoteEditor(note) : `<div class="editor-empty"><div class="editor-empty-card"><div class="empty-illustration">✎</div><h2>Ready when you are</h2><p>Create a note to collect an idea, a lecture, or a question worth keeping.</p><button class="primary-button" id="empty-new-note">＋ Create your first note</button></div></div>`;
-    workspace.innerHTML = `<div class="notes-layout">
+    workspace.innerHTML = `<div class="notes-layout${state.mobileEditorOpen ? ' mobile-editor-open' : ''}">
       <section class="notes-column" aria-label="Notes list">
         <div class="pane-title-row"><h1>${escapeHTML(listTitle)}</h1><button class="icon-button" id="new-note-small" aria-label="New note" title="New note">＋</button></div>
         <p class="collection-caption">${notes.length} ${notes.length === 1 ? 'note' : 'notes'} · kept in your workspace</p>
@@ -234,7 +236,7 @@
     const folderOptions = data.folders.map(folder => `<option value="${escapeHTML(folder)}" ${folder === note.folder ? 'selected' : ''}>${escapeHTML(folder)}</option>`).join('');
     const tags = (note.tags || []).map(tag => `<span class="tag-chip">${escapeHTML(tag)}</span>`).join('');
     return `<div class="editor-topline">
-      <div class="editor-topline-left"><span class="save-state" id="save-state"><span class="save-dot"></span> Saved on this device</span></div>
+      <div class="editor-topline-left"><button class="mobile-editor-back" id="mobile-editor-back" aria-label="Back to notes">‹ <span>Notes</span></button><span class="save-state" id="save-state"><span class="save-dot"></span> Saved on this device</span></div>
       <div class="editor-topline-actions">
         <button class="editor-action" id="dictate-button" title="Dictate a note"><span>◉</span><span class="action-label">Dictate</span></button>
         <button class="editor-action" id="preview-toggle" title="Preview markdown">${state.preview ? '✎' : '▤'}<span class="action-label">${state.preview ? 'Edit' : 'Preview'}</span></button>
@@ -393,6 +395,7 @@
     data.notes.unshift(note);
     state.selectedNoteId = note.id;
     state.view = 'notes';
+    state.mobileEditorOpen = true;
     state.folder = note.folder === 'General' ? 'All notes' : note.folder;
     state.listFilter = 'all';
     saveData();
@@ -471,7 +474,7 @@
       clone.pinned = false; saveData(); toast('Note duplicated.');
     } else if (action === 'delete') {
       note.isDeleted = true; note.deletedAt = Date.now(); note.updatedAt = Date.now();
-      state.selectedNoteId = null; state.preview = false; saveData(); renderWorkspace(); toast('Moved to recently deleted.');
+      state.selectedNoteId = null; state.mobileEditorOpen = false; state.preview = false; saveData(); renderWorkspace(); toast('Moved to recently deleted.');
     } else if (action === 'copy') {
       navigator.clipboard?.writeText(`# ${note.title || 'Untitled note'}\n\n${note.body || ''}`).then(() => toast('Markdown copied to clipboard.')).catch(() => toast('Clipboard access is unavailable in this browser.'));
     } else if (action === 'download') {
@@ -546,7 +549,7 @@
   function openSearchResult(noteId) {
     const note = data.notes.find(item => item.id === noteId && !item.isDeleted);
     if (!note) return;
-    state.view = 'notes'; state.folder = 'All notes'; state.listFilter = 'all'; state.selectedNoteId = note.id; state.preview = false;
+    state.view = 'notes'; state.folder = 'All notes'; state.listFilter = 'all'; state.selectedNoteId = note.id; state.mobileEditorOpen = true; state.preview = false;
     closeModal(); renderWorkspace();
   }
 
@@ -562,6 +565,7 @@
     data.settings.theme = theme === 'dark' ? 'dark' : 'light';
     document.documentElement.dataset.theme = data.settings.theme;
     $('#theme-icon').textContent = data.settings.theme === 'dark' ? '☀' : '☾';
+    if (window.StillnoteAndroid && typeof window.StillnoteAndroid.setTheme === 'function') window.StillnoteAndroid.setTheme(data.settings.theme);
     saveData();
   }
 
@@ -768,17 +772,18 @@
       data.settings = { ...data.settings, ...(imported.settings || {}) };
       data.stats = { ...data.stats, ...(imported.stats || {}) };
       state.selectedNoteId = data.notes.find(note => !note.isDeleted)?.id || null;
-      state.folder = 'All notes'; state.view = 'notes'; saveData(); closeModal(); renderWorkspace(); toast('Backup imported.');
+      state.folder = 'All notes'; state.view = 'notes'; state.mobileEditorOpen = false; saveData(); closeModal(); renderWorkspace(); toast('Backup imported.');
     } catch (error) { toast(error.message || 'Could not read this backup file.'); }
   }
 
   workspace.addEventListener('click', event => {
     const target = event.target.closest('button, [data-note-id], [data-folder], select');
     if (!target) return;
-    if (target.dataset.mobileView) { state.view = target.dataset.mobileView; renderWorkspace(); return; }
-    if (target.dataset.view) { state.view = target.dataset.view; if (state.view === 'notes') state.folder = 'All notes'; state.preview = false; renderWorkspace(); return; }
-    if (target.dataset.folder) { state.view = 'notes'; state.folder = target.dataset.folder; state.listFilter = 'all'; renderWorkspace(); return; }
-    if (target.dataset.noteId) { state.selectedNoteId = target.dataset.noteId; state.preview = false; renderWorkspace(); return; }
+    if (target.dataset.mobileView) { state.view = target.dataset.mobileView; state.mobileEditorOpen = false; renderWorkspace(); return; }
+    if (target.dataset.view) { state.view = target.dataset.view; state.mobileEditorOpen = false; if (state.view === 'notes') state.folder = 'All notes'; state.preview = false; renderWorkspace(); return; }
+    if (target.dataset.folder) { state.view = 'notes'; state.mobileEditorOpen = false; state.folder = target.dataset.folder; state.listFilter = 'all'; renderWorkspace(); return; }
+    if (target.dataset.noteId) { state.selectedNoteId = target.dataset.noteId; state.mobileEditorOpen = true; state.preview = false; renderWorkspace(); return; }
+    if (target.id === 'mobile-editor-back') { state.mobileEditorOpen = false; saveData(); renderWorkspace(); return; }
     if (target.dataset.filter) { state.listFilter = target.dataset.filter; renderWorkspace(); return; }
     if (target.id === 'new-note-small' || target.id === 'empty-new-note') { makeNote('', '', currentFolderForNewNote()); return; }
     if (target.id === 'dictate-button') { startDictation(); return; }
@@ -850,9 +855,9 @@
   document.addEventListener('click', event => {
     const target = event.target.closest('button');
     if (!target) return;
-    if (target.dataset.mobileView) { state.view = target.dataset.mobileView; renderWorkspace(); return; }
-    if (target.dataset.view) { state.view = target.dataset.view; if (state.view === 'notes') state.folder = 'All notes'; state.preview = false; renderWorkspace(); return; }
-    if (target.dataset.folder) { state.view = 'notes'; state.folder = target.dataset.folder; state.listFilter = 'all'; renderWorkspace(); return; }
+    if (target.dataset.mobileView) { state.view = target.dataset.mobileView; state.mobileEditorOpen = false; renderWorkspace(); return; }
+    if (target.dataset.view) { state.view = target.dataset.view; state.mobileEditorOpen = false; if (state.view === 'notes') state.folder = 'All notes'; state.preview = false; renderWorkspace(); return; }
+    if (target.dataset.folder) { state.view = 'notes'; state.mobileEditorOpen = false; state.folder = target.dataset.folder; state.listFilter = 'all'; renderWorkspace(); return; }
     if (target.id === 'new-note-button') { makeNote('', '', currentFolderForNewNote()); return; }
     if (target.id === 'add-folder-button') { openFolderModal(); return; }
     if (target.id === 'settings-button' || target.id === 'profile-button') { openSettings(); return; }
@@ -866,6 +871,7 @@
     if (modifier && event.key.toLowerCase() === 'n') { event.preventDefault(); makeNote('', '', currentFolderForNewNote()); return; }
     if (modifier && event.key.toLowerCase() === 's') { event.preventDefault(); saveData(); toast('Saved on this device.'); return; }
     if (event.key === 'Escape' && overlayRoot.innerHTML) { closeModal(); return; }
+    if (event.key === 'Escape' && state.view === 'notes' && state.mobileEditorOpen) { state.mobileEditorOpen = false; renderWorkspace(); return; }
     if (overlayRoot.innerHTML && $('#global-search')) {
       const results = searchNotes(state.searchQuery);
       if (event.key === 'ArrowDown') { event.preventDefault(); state.searchIndex = Math.min(results.length - 1, state.searchIndex + 1); renderSearchResults(); }
@@ -876,11 +882,19 @@
     }
   });
 
+  window.stillnoteHandleBack = function () {
+    if (overlayRoot.innerHTML) { closeModal(); return true; }
+    if (state.view === 'notes' && state.mobileEditorOpen) { state.mobileEditorOpen = false; saveData(); renderWorkspace(); return true; }
+    return false;
+  };
+
   window.addEventListener('resize', renderMobileNav);
   window.addEventListener('beforeunload', saveData);
   document.addEventListener('visibilitychange', () => { if (document.hidden) saveData(); });
+  if (window.StillnoteAndroid) document.documentElement.dataset.platform = 'android';
   document.documentElement.dataset.theme = data.settings.theme;
   $('#theme-icon').textContent = data.settings.theme === 'dark' ? '☀' : '☾';
+  if (window.StillnoteAndroid && typeof window.StillnoteAndroid.setTheme === 'function') window.StillnoteAndroid.setTheme(data.settings.theme);
   setInterval(updateFocusDisplay, 300);
   renderWorkspace();
   if ('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('./service-worker.js').catch(() => {});
