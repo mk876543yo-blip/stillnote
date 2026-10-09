@@ -5,7 +5,7 @@ pkgdesc='Private local notes and study workspace'
 arch=('x86_64')
 url='https://github.com/mk876543yo-blip/stillnote'
 license=('MIT')
-depends=('gtk3' 'hicolor-icon-theme' 'webkit2gtk-4.1')
+depends=('gtk3' 'hicolor-icon-theme' 'webkit2gtk-4.1' 'xdotool')
 makedepends=('rust')
 
 if [[ -f "${startdir}/src-tauri/Cargo.toml" ]]; then

@@ -30,7 +30,7 @@
   "bundle": {
     "active": true,
     "targets": ["appimage", "deb", "rpm"],
-    "category": "Office",
+    "category": "Productivity",
     "shortDescription": "Private local notes and study workspace",
     "longDescription": "A private workspace for notes, collections, flashcards, focus sessions, and study insights. Notes and media are stored locally on this device.",
     "publisher": "Stillnote contributors",

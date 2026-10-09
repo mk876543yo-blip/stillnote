@@ -151,7 +151,7 @@ Arch/Garuda prerequisites:
 
 ```bash
 sudo pacman -Syu --needed base-devel curl file gtk3 hicolor-icon-theme \
-  libxdo openssl librsvg rust webkit2gtk-4.1 xdotool
+  openssl librsvg rust webkit2gtk-4.1 xdotool
 ```
 
 Debian/Ubuntu prerequisites:

@@ -38,3 +38,12 @@ modules:
         path: ../..
       - type: file
         path: cargo-sources.json
+      - type: inline
+        contents: |
+          [source.crates-io]
+          replace-with = "vendored-sources"
+
+          [source.vendored-sources]
+          directory = "cargo/vendor"
+        dest: cargo
+        dest-filename: config
