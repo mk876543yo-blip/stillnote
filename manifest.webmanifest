@@ -1,7 +1,7 @@
 {
-  "name": "Stillnote — your study space",
+  "name": "Stillnote — notes that stay yours",
   "short_name": "Stillnote",
-  "description": "A local-first workspace for notes, flashcards, focus sessions, and better recall.",
+  "description": "A private desktop workspace for notes, ideas, and study.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

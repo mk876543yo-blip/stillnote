@@ -1,60 +1,41 @@
-# Stillnote
+# Stillnote 1.0.0
 
-[![Latest release](https://img.shields.io/github/v/release/mk876543yo-blip/stillnote?label=latest%20release)](https://github.com/mk876543yo-blip/stillnote/releases/latest)
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+Stillnote is a private notes app for Windows and Linux. Write and organize notes, attach images and videos, browse everything with **Ctrl+K**, and choose from six color themes. Your notes stay in this browser on this computer.
 
-Stillnote is a private, local-first place for notes and focused study. It has separate interfaces for Android phones and desktop PCs. There is no account, analytics, or cloud sync.
+Python 3 is required to run the local app server.
 
-## Android
+## Windows
 
-Install the [latest Android release](https://github.com/mk876543yo-blip/stillnote/releases/latest). The phone interface uses a full-screen note editor, touch-sized controls, bottom navigation, Android back navigation, native dictation, and Android's file picker for backups.
+1. Download and extract the repository.
+2. Open PowerShell in the extracted folder and run:
 
-Build a debug APK from source with Java 17 and Android SDK Platform 36:
+   ```powershell
+   py -m http.server 8000 --bind 127.0.0.1
+   ```
 
-```bash
-cd android
-./gradlew :app:assembleDebug
-```
+3. Open <http://127.0.0.1:8000> in Chrome or Edge. Use the install icon in the address bar to add Stillnote to your desktop.
 
-The APK is written to `android/app/build/outputs/apk/debug/app-debug.apk`.
+## Linux
 
-## PC
+1. Download and extract the repository.
+2. Open a terminal in the extracted folder and run:
 
-Use Stillnote in a current desktop browser, or install it as a Progressive Web App from the browser's install control. The PC interface keeps the notes list, editor, and study tools side by side and includes keyboard shortcuts.
+   ```bash
+   python3 -m http.server 8000 --bind 127.0.0.1
+   ```
 
-Run it locally without a build step:
+3. Open <http://127.0.0.1:8000> in Chrome or Edge. Use the install icon in the address bar to add Stillnote to your desktop.
 
-```bash
-python3 -m http.server 8000 --bind 127.0.0.1
-```
+Keep the terminal open while using Stillnote. After the first visit, the app can reopen offline in supported browsers.
 
-Then open <http://127.0.0.1:8000>. After its first load, the browser app shell can work offline in supported browsers.
+## Using Stillnote
 
-## Features
+- Select **New note** to write. Notes save as you type.
+- Create collections to organize notes.
+- Select **Browse notes** or press **Ctrl+K** to search note text, titles, tags, collections, and attached file names.
+- Select **Media** in a note to add images or videos.
+- Open **Settings** to choose a theme or import and export a backup.
 
-- Notes with autosave, collections, tags, pinning, search, Markdown preview, templates, and recently deleted items.
-- Flashcards created on-device from definitions and key sentences, with spaced review.
-- Focus timer, session history, and study insights.
-- Dictation, light and dark themes, keyboard shortcuts, and JSON backup import/export.
+Notes and attached media stay in your browser on this computer. Backups include your notes, settings, and media. Export a backup before clearing browser data or moving to another computer.
 
-## Privacy and storage
-
-Notes, preferences, flashcards, and study history stay in that app's local storage on that device. Android and PC data are separate; export a backup in **Settings** to move notes between devices, browsers, or app installs. Export a backup before clearing browser data or uninstalling Stillnote.
-
-Dictation uses Android's speech recognition service in the Android app, or the browser's speech service on PC. Availability and network behavior depend on the installed service.
-
-## Keyboard shortcuts
-
-- `Ctrl/⌘ + K` — search notes
-- `Ctrl/⌘ + N` — create a note
-- `Ctrl/⌘ + S` — save now
-- `Space` — reveal a flashcard answer during review
-
-## Repository layout
-
-- `app.js`, `styles.css`, `index.html` — PC browser/PWA app and shared app logic
-- `android/` — Android app wrapper and build configuration
-- `fastlane/metadata/` — Android store listing metadata
-- `service-worker.js` — browser offline shell cache
-
-See [LICENSE](LICENSE) for the MIT license.
+See [LICENSE](LICENSE) for the license.

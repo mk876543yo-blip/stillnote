@@ -1,8 +1,12 @@
-/* Stillnote is a local-first study workspace. Notes, decks, preferences and session history stay in this browser. */
+/* Stillnote keeps notes and study data on this computer. */
 (function () {
   'use strict';
 
   const STORAGE_KEY = 'stillnote.workspace.v1';
+  const MEDIA_DB = 'stillnote.media.v1';
+  const MEDIA_STORE = 'attachments';
+  const THEMES = ['light', 'dark', 'ocean', 'forest', 'rose', 'sand'];
+  const THEME_LABELS = { light: 'Light', dark: 'Dark', ocean: 'Ocean', forest: 'Forest', rose: 'Rose', sand: 'Sand' };
   const $ = (selector, root = document) => root.querySelector(selector);
   const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
   const workspace = $('#workspace');
@@ -11,9 +15,10 @@
   const starterNote = {
     id: makeId(),
     title: 'A calm place to think',
-    body: 'Welcome to Stillnote. Your notes are saved on this device as you type.\n\nA few ways to make this space yours:\n- Create collections for each class or project.\n- Dictate a thought with the microphone button.\n- Turn your notes into flashcards and review them over time.\n- Use Focus room for a quiet study session.\n\nTip: use **⌘ / Ctrl + K** to find a note, and **⌘ / Ctrl + N** to start one.',
+    body: 'Welcome to Stillnote. Your notes are saved on this computer as you type.\n\nA few ways to make this space yours:\n- Create collections for each class or project.\n- Dictate a thought with the microphone button.\n- Turn your notes into flashcards and review them over time.\n- Use Focus room for a quiet study session.\n\nTip: press **Ctrl + K** to browse notes, or **Ctrl + N** to start one.',
     folder: 'General',
     tags: ['Getting started'],
+    attachments: [],
     pinned: true,
     createdAt: Date.now(),
     updatedAt: Date.now(),
@@ -49,6 +54,7 @@
         ...parsed,
         notes: notes.map(note => note && typeof note === 'object' ? {
           ...note,
+          attachments: Array.isArray(note.attachments) ? note.attachments : [],
           body: String(note.body || '').replace('- Connect a local Ollama model in Settings for AI summaries, explanations, quizzes, and study guides.\n', '')
         } : note),
         folders: Array.isArray(parsed.folders) && parsed.folders.length ? parsed.folders : defaults.folders,
@@ -62,6 +68,7 @@
   }
 
   const data = loadData();
+  if (!THEMES.includes(data.settings.theme)) data.settings.theme = 'light';
   const state = {
     view: 'notes',
     folder: 'All notes',
@@ -89,6 +96,81 @@
   let recognition = null;
   let isRecording = false;
   let recordingNoteId = null;
+  const attachmentUrls = new Map();
+
+  function openMediaDatabase() {
+    return new Promise((resolve, reject) => {
+      if (!window.indexedDB) return reject(new Error('This browser cannot store attachments.'));
+      const request = indexedDB.open(MEDIA_DB, 1);
+      request.onupgradeneeded = () => {
+        if (!request.result.objectStoreNames.contains(MEDIA_STORE)) request.result.createObjectStore(MEDIA_STORE, { keyPath: 'id' });
+      };
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error || new Error('Could not open attachment storage.'));
+    });
+  }
+
+  async function writeMediaRecord(record) {
+    const db = await openMediaDatabase();
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction(MEDIA_STORE, 'readwrite');
+      transaction.objectStore(MEDIA_STORE).put(record);
+      transaction.oncomplete = () => { db.close(); resolve(); };
+      transaction.onerror = () => { db.close(); reject(transaction.error || new Error('Could not save this attachment.')); };
+      transaction.onabort = () => { db.close(); reject(transaction.error || new Error('Could not save this attachment.')); };
+    });
+  }
+
+  async function readMediaRecord(id) {
+    const db = await openMediaDatabase();
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction(MEDIA_STORE, 'readonly');
+      const request = transaction.objectStore(MEDIA_STORE).get(id);
+      request.onsuccess = () => resolve(request.result || null);
+      request.onerror = () => reject(request.error || new Error('Could not read this attachment.'));
+      transaction.oncomplete = () => db.close();
+      transaction.onerror = () => { db.close(); reject(transaction.error || new Error('Could not read this attachment.')); };
+    });
+  }
+
+  async function deleteMediaRecord(id) {
+    const db = await openMediaDatabase();
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction(MEDIA_STORE, 'readwrite');
+      transaction.objectStore(MEDIA_STORE).delete(id);
+      transaction.oncomplete = () => { db.close(); resolve(); };
+      transaction.onerror = () => { db.close(); reject(transaction.error || new Error('Could not remove this attachment.')); };
+      transaction.onabort = () => { db.close(); reject(transaction.error || new Error('Could not remove this attachment.')); };
+    });
+  }
+
+  function clearAttachmentUrls() {
+    for (const url of attachmentUrls.values()) URL.revokeObjectURL(url);
+    attachmentUrls.clear();
+  }
+
+  function renderNoteAttachments(note) {
+    const holder = $('#note-attachments');
+    if (!holder) return;
+    const attachments = Array.isArray(note.attachments) ? note.attachments : [];
+    if (!attachments.length) { holder.remove(); return; }
+    holder.innerHTML = '<div class="attachments-heading">Attachments</div><div class="attachment-grid" aria-live="polite"><span class="attachment-loading">Loading files…</span></div>';
+    const grid = $('.attachment-grid', holder);
+    Promise.all(attachments.map(async attachment => ({ attachment, record: await readMediaRecord(attachment.id).catch(() => null) }))).then(items => {
+      if (!holder.isConnected || activeNote()?.id !== note.id) return;
+      grid.innerHTML = items.map(({ attachment, record }) => {
+        if (!record?.blob) return `<div class="attachment-missing">${escapeHTML(attachment.name || 'File')} · file unavailable</div>`;
+        const url = URL.createObjectURL(record.blob);
+        attachmentUrls.set(attachment.id, url);
+        const name = escapeHTML(attachment.name || 'Attachment');
+        const isVideo = String(attachment.type || record.blob.type).startsWith('video/');
+        const preview = isVideo
+          ? `<video controls preload="metadata" src="${url}" aria-label="${name}"></video>`
+          : `<a class="attachment-image-link" href="${url}" target="_blank" rel="noopener"><img src="${url}" alt="${name}" loading="lazy"></a>`;
+        return `<article class="attachment-card">${preview}<div class="attachment-caption"><span title="${name}">${name}</span><button class="attachment-remove" data-remove-attachment="${escapeHTML(attachment.id)}" aria-label="Remove ${name}" title="Remove attachment">×</button></div></article>`;
+      }).join('');
+    });
+  }
 
   function saveData() {
     try {
@@ -169,6 +251,7 @@
 
   function renderWorkspace() {
     if (isRecording && recognition && (state.view !== 'notes' || state.selectedNoteId !== recordingNoteId)) recognition.stop();
+    clearAttachmentUrls();
     document.body.classList.toggle('mobile-note-open', state.view === 'notes' && state.mobileEditorOpen);
     renderSidebar();
     if (state.view === 'notes') renderNotesView();
@@ -217,6 +300,7 @@
       <section class="editor-column" aria-label="Note editor">${notePanel}</section>
       ${note ? renderStudyPanel() : ''}
     </div>`;
+    if (note) renderNoteAttachments(note);
   }
 
   function renderNoteCards(notes) {
@@ -239,6 +323,7 @@
       <div class="editor-topline-left"><button class="mobile-editor-back" id="mobile-editor-back" aria-label="Back to notes">‹ <span>Notes</span></button><span class="save-state" id="save-state"><span class="save-dot"></span> Saved on this device</span></div>
       <div class="editor-topline-actions">
         <button class="editor-action" id="dictate-button" title="Dictate a note"><span>◉</span><span class="action-label">Dictate</span></button>
+        <button class="editor-action" id="add-media-button" title="Add images or videos"><span>＋</span><span class="action-label">Media</span></button>
         <button class="editor-action" id="preview-toggle" title="Preview markdown">${state.preview ? '✎' : '▤'}<span class="action-label">${state.preview ? 'Edit' : 'Preview'}</span></button>
         <button class="editor-action" id="pin-note-button" title="${note.pinned ? 'Unpin note' : 'Pin note'}">${note.pinned ? '◆' : '◇'}<span class="action-label">${note.pinned ? 'Pinned' : 'Pin'}</span></button>
         <button class="editor-action" id="note-menu-button" title="More note actions">•••</button>
@@ -249,7 +334,9 @@
       <input class="note-title-input" id="note-title-input" maxlength="180" value="${escapeHTML(note.title)}" placeholder="Untitled note" aria-label="Note title">
       <div class="editor-meta-row"><span id="editor-edited-at">Edited ${escapeHTML(formatDate(note.updatedAt))}</span><span class="meta-divider"></span><span>${escapeHTML(formatWords(note.body))}</span></div>
       <div class="tag-list">${tags}<button class="tag-add" id="add-tag-button">＋ Add tag</button></div>
+      <input id="note-media-input" type="file" accept="image/*,video/*" multiple hidden>
       ${state.preview ? `<div class="markdown-preview" id="note-markdown-preview">${renderMarkdown(note.body)}</div>` : `<textarea class="note-body-input" id="note-body-input" spellcheck="true" placeholder="Start writing…\n\nTip: capture the idea first. You can organize it later." aria-label="Note content">${escapeHTML(note.body)}</textarea>`}
+      <div class="note-attachments" id="note-attachments"></div>
     </div>
     <div class="note-bottomline"><span>Autosaved locally</span><span class="note-bottomline-right"><span id="word-count">${escapeHTML(formatWords(note.body))}</span><span id="char-count">${String(note.body || '').length} characters</span></span></div>`;
   }
@@ -391,7 +478,7 @@
 
   function makeNote(title = '', body = '', folder = 'General', tags = []) {
     const now = Date.now();
-    const note = { id: makeId(), title, body, folder: data.folders.includes(folder) ? folder : 'General', tags, pinned: false, createdAt: now, updatedAt: now, isDeleted: false };
+    const note = { id: makeId(), title, body, folder: data.folders.includes(folder) ? folder : 'General', tags, attachments: [], pinned: false, createdAt: now, updatedAt: now, isDeleted: false };
     data.notes.unshift(note);
     state.selectedNoteId = note.id;
     state.view = 'notes';
@@ -471,7 +558,8 @@
     closeModal();
     if (action === 'duplicate') {
       const clone = makeNote(`${note.title || 'Untitled note'} — copy`, note.body, note.folder, [...(note.tags || [])]);
-      clone.pinned = false; saveData(); toast('Note duplicated.');
+      clone.attachments = (note.attachments || []).map(attachment => ({ ...attachment }));
+      clone.pinned = false; saveData(); renderWorkspace(); toast('Note duplicated.');
     } else if (action === 'delete') {
       note.isDeleted = true; note.deletedAt = Date.now(); note.updatedAt = Date.now();
       state.selectedNoteId = null; state.mobileEditorOpen = false; state.preview = false; saveData(); renderWorkspace(); toast('Moved to recently deleted.');
@@ -486,10 +574,6 @@
   function safeFileName(name) { return String(name).toLowerCase().replace(/[^a-z0-9-]+/g, '-').replace(/^-|-$/g, '').slice(0, 55) || 'note'; }
 
   function downloadText(filename, content, type = 'text/markdown') {
-    if (window.StillnoteAndroid && typeof window.StillnoteAndroid.saveTextFile === 'function') {
-      window.StillnoteAndroid.saveTextFile(filename, type, content);
-      return;
-    }
     const blob = new Blob([content], { type: `${type};charset=utf-8` });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a'); link.href = url; link.download = filename; link.click();
@@ -519,31 +603,54 @@
 
   function openSearch() {
     state.searchQuery = ''; state.searchIndex = 0;
-    openModal('', '', `<div class="search-input-row"><span>⌕</span><input id="global-search" type="search" placeholder="Search notes, ideas, and tags…" autocomplete="off" aria-label="Search notes"></div><div class="result-list" id="search-results"></div><div class="search-footer"><span>↑ ↓ to move · Enter to open</span><span>Esc to close</span></div>`, 'search-modal');
-    $('#modal-title').textContent = 'Search your workspace';
+    openModal('', '', `<div class="search-input-row"><span>⌕</span><input id="global-search" type="search" placeholder="Find words, tags, collections, or files…" autocomplete="off" aria-label="Browse notes"></div><div class="result-list" id="search-results"></div><div class="search-footer"><span>Search every note · ↑ ↓ to move · Enter to open</span><span>Esc to close</span></div>`, 'search-modal');
+    $('#modal-title').textContent = 'Browse your notes';
     setTimeout(() => $('#global-search')?.focus(), 25);
     renderSearchResults();
   }
 
   function searchNotes(query) {
-    const term = query.trim().toLowerCase();
+    const term = query.trim().toLocaleLowerCase();
     const notes = data.notes.filter(note => !note.isDeleted);
     if (!term) return notes.sort((a, b) => b.updatedAt - a.updatedAt).slice(0, 7);
+    const terms = term.split(/\s+/).filter(Boolean);
     return notes.map(note => {
-      const title = (note.title || '').toLowerCase();
-      const body = (note.body || '').toLowerCase();
-      const tags = (note.tags || []).join(' ').toLowerCase();
-      const score = title.includes(term) ? 4 : tags.includes(term) ? 3 : body.includes(term) ? 1 : 0;
+      const title = (note.title || '').toLocaleLowerCase();
+      const body = (note.body || '').toLocaleLowerCase();
+      const tags = (note.tags || []).join(' ').toLocaleLowerCase();
+      const folder = (note.folder || '').toLocaleLowerCase();
+      const files = (note.attachments || []).map(attachment => attachment.name || '').join(' ').toLocaleLowerCase();
+      const searchable = `${title} ${body} ${tags} ${folder} ${files}`;
+      if (!terms.every(word => searchable.includes(word))) return { note, score: 0 };
+      const score = (title.includes(term) ? 100 : 0) + (tags.includes(term) ? 70 : 0) + (folder.includes(term) ? 60 : 0) + (files.includes(term) ? 50 : 0) + (body.includes(term) ? 30 : 0)
+        + terms.reduce((total, word) => total + (title.includes(word) ? 12 : 0) + (tags.includes(word) ? 8 : 0) + (folder.includes(word) ? 5 : 0) + (files.includes(word) ? 5 : 0) + (body.includes(word) ? 2 : 0), 0);
       return { note, score };
     }).filter(item => item.score).sort((a, b) => b.score - a.score || b.note.updatedAt - a.note.updatedAt).map(item => item.note).slice(0, 12);
+  }
+
+  function searchPreview(note, query) {
+    const body = plainText(note.body);
+    const terms = query.trim().toLocaleLowerCase().split(/\s+/).filter(Boolean);
+    if (!terms.length) return body.slice(0, 125) || (note.attachments?.[0]?.name ? `File · ${note.attachments[0].name}` : note.folder || 'No preview');
+    const bodyIndex = terms.map(term => body.toLocaleLowerCase().indexOf(term)).filter(index => index >= 0).sort((a, b) => a - b)[0];
+    if (bodyIndex !== undefined) {
+      const start = Math.max(0, bodyIndex - 48);
+      const end = Math.min(body.length, bodyIndex + 112);
+      return `${start ? '…' : ''}${body.slice(start, end)}${end < body.length ? '…' : ''}`;
+    }
+    const file = (note.attachments || []).find(item => terms.some(term => (item.name || '').toLocaleLowerCase().includes(term)));
+    if (file) return `File · ${file.name}`;
+    const tag = (note.tags || []).find(item => terms.some(term => item.toLocaleLowerCase().includes(term)));
+    if (tag) return `Tag · ${tag}`;
+    return `Collection · ${note.folder || 'General'}`;
   }
 
   function renderSearchResults() {
     const holder = $('#search-results');
     if (!holder) return;
     const results = searchNotes(state.searchQuery);
-    if (!results.length) { holder.innerHTML = '<div class="empty-list">No notes found. Try another word.</div>'; return; }
-    holder.innerHTML = results.map((note, index) => `<button class="search-result ${index === state.searchIndex ? 'is-highlighted' : ''}" data-search-note="${escapeHTML(note.id)}"><span class="search-result-icon">▤</span><span class="search-result-main"><strong>${escapeHTML(note.title || 'Untitled note')}</strong><small>${escapeHTML(plainText(note.body).slice(0, 120) || note.folder || 'No preview')} · ${escapeHTML(note.folder || 'General')}</small></span></button>`).join('');
+    if (!results.length) { holder.innerHTML = `<div class="empty-list">${state.searchQuery ? 'No matching notes. Try another word.' : 'Your recent notes will appear here.'}</div>`; return; }
+    holder.innerHTML = results.map((note, index) => `<button class="search-result ${index === state.searchIndex ? 'is-highlighted' : ''}" data-search-note="${escapeHTML(note.id)}"><span class="search-result-icon">▤</span><span class="search-result-main"><strong>${escapeHTML(note.title || 'Untitled note')}</strong><small>${escapeHTML(searchPreview(note, state.searchQuery))} · ${escapeHTML(note.folder || 'General')}</small></span></button>`).join('');
   }
 
   function openSearchResult(noteId) {
@@ -555,18 +662,29 @@
 
   function openSettings() {
     const settings = data.settings;
-    openModal('Settings', 'Choose your preferences and manage your local backup.', `<div class="form-row"><div class="form-group"><label for="theme-select">Appearance</label><select id="theme-select"><option value="light" ${settings.theme === 'light' ? 'selected' : ''}>Light</option><option value="dark" ${settings.theme === 'dark' ? 'selected' : ''}>Dark</option></select></div><div class="form-group"><label for="voice-language">Dictation language</label><select id="voice-language"><option value="en-US" ${settings.voiceLanguage === 'en-US' ? 'selected' : ''}>English (US)</option><option value="en-GB" ${settings.voiceLanguage === 'en-GB' ? 'selected' : ''}>English (UK)</option><option value="en-IN" ${settings.voiceLanguage === 'en-IN' ? 'selected' : ''}>English (India)</option><option value="hi-IN" ${settings.voiceLanguage === 'hi-IN' ? 'selected' : ''}>Hindi</option><option value="es-ES" ${settings.voiceLanguage === 'es-ES' ? 'selected' : ''}>Español</option><option value="fr-FR" ${settings.voiceLanguage === 'fr-FR' ? 'selected' : ''}>Français</option><option value="de-DE" ${settings.voiceLanguage === 'de-DE' ? 'selected' : ''}>Deutsch</option></select></div></div>
+    const themeOptions = THEMES.map(theme => `<option value="${theme}" ${settings.theme === theme ? 'selected' : ''}>${THEME_LABELS[theme]}</option>`).join('');
+    openModal('Settings', 'Choose a theme and manage your local backup.', `<div class="form-row"><div class="form-group"><label for="theme-select">Appearance</label><select id="theme-select">${themeOptions}</select></div><div class="form-group"><label for="voice-language">Dictation language</label><select id="voice-language"><option value="en-US" ${settings.voiceLanguage === 'en-US' ? 'selected' : ''}>English (US)</option><option value="en-GB" ${settings.voiceLanguage === 'en-GB' ? 'selected' : ''}>English (UK)</option><option value="en-IN" ${settings.voiceLanguage === 'en-IN' ? 'selected' : ''}>English (India)</option><option value="hi-IN" ${settings.voiceLanguage === 'hi-IN' ? 'selected' : ''}>Hindi</option><option value="es-ES" ${settings.voiceLanguage === 'es-ES' ? 'selected' : ''}>Español</option><option value="fr-FR" ${settings.voiceLanguage === 'fr-FR' ? 'selected' : ''}>Français</option><option value="de-DE" ${settings.voiceLanguage === 'de-DE' ? 'selected' : ''}>Deutsch</option></select></div></div>
       <div class="modal-actions" style="justify-content:space-between"><button class="secondary-button" id="backup-export">↓ Export backup</button><div style="display:flex;gap:7px"><button class="secondary-button" data-close-modal>Close</button><label class="secondary-button" for="backup-import" style="cursor:pointer">↑ Import backup</label><input id="backup-import" type="file" accept="application/json,.json" hidden></div></div>
       `);
     $('#theme-select').addEventListener('change', event => setTheme(event.target.value));
   }
 
   function setTheme(theme) {
-    data.settings.theme = theme === 'dark' ? 'dark' : 'light';
+    data.settings.theme = THEMES.includes(theme) ? theme : 'light';
     document.documentElement.dataset.theme = data.settings.theme;
-    $('#theme-icon').textContent = data.settings.theme === 'dark' ? '☀' : '☾';
-    if (window.StillnoteAndroid && typeof window.StillnoteAndroid.setTheme === 'function') window.StillnoteAndroid.setTheme(data.settings.theme);
+    const themeColor = $('meta[name="theme-color"]');
+    if (themeColor) themeColor.content = getComputedStyle(document.documentElement).getPropertyValue('--page').trim();
+    $('#theme-icon').textContent = '◐';
+    const themeToggle = $('#theme-toggle');
+    if (themeToggle) themeToggle.title = `Theme: ${THEME_LABELS[data.settings.theme]} · click to change`;
+    const themeSelect = $('#theme-select');
+    if (themeSelect) themeSelect.value = data.settings.theme;
     saveData();
+  }
+
+  function cycleTheme() {
+    const index = THEMES.indexOf(data.settings.theme);
+    setTheme(THEMES[(index + 1 + THEMES.length) % THEMES.length]);
   }
 
   function extractSentences(text) {
@@ -639,14 +757,6 @@
   }
 
   function startDictation() {
-    if (window.StillnoteAndroid && typeof window.StillnoteAndroid.startDictation === 'function') {
-      const button = $('#dictate-button');
-      isRecording = true;
-      if (button) { button.classList.add('is-recording'); button.innerHTML = '<span>◉</span><span class="action-label">Listening…</span>'; }
-      try { window.StillnoteAndroid.startDictation(data.settings.voiceLanguage || 'en-US'); }
-      catch (error) { isRecording = false; toast('Android dictation could not start.'); }
-      return;
-    }
     const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!Recognition) { toast('Dictation is not available in this browser. Try a recent version of Chrome or Edge.'); return; }
     if (isRecording && recognition) { recognition.stop(); return; }
@@ -678,36 +788,50 @@
     try { recognition.start(); } catch (error) { toast('Dictation could not start. Check your microphone permission.'); }
   }
 
-  window.addEventListener('stillnote:dictation', event => {
-    const transcript = String(event.detail || '').trim();
+  async function attachMediaFiles(fileList) {
     const note = activeNote();
-    const textarea = $('#note-body-input');
-    if (transcript && note && textarea) {
-      const before = note.body || '';
-      const separator = before && !/\s$/.test(before) ? '\n' : '';
-      textarea.value = `${before}${separator}${transcript} `;
-      updateNoteFromEditor('body', textarea.value);
-      toast('Dictation added to your note.');
+    if (!note) return;
+    const files = [...fileList].filter(file => file.type.startsWith('image/') || file.type.startsWith('video/'));
+    if (!files.length) { toast('Choose an image or video file.'); return; }
+    note.attachments = Array.isArray(note.attachments) ? note.attachments : [];
+    let added = 0;
+    for (const file of files) {
+      const id = makeId();
+      try {
+        await writeMediaRecord({ id, blob: file });
+        note.attachments.push({ id, name: file.name, type: file.type, size: file.size, addedAt: Date.now() });
+        added += 1;
+      } catch (error) {
+        toast(`Could not save ${file.name}. Check available browser storage.`);
+      }
     }
-    isRecording = false;
-    const button = $('#dictate-button');
-    if (button) { button.classList.remove('is-recording'); button.innerHTML = '<span>◉</span><span class="action-label">Dictate</span>'; }
-  });
+    if (added) {
+      note.updatedAt = Date.now();
+      saveData();
+      if (activeNote()?.id === note.id) renderWorkspace();
+      toast(`${added} ${added === 1 ? 'file' : 'files'} added to the note.`);
+    }
+  }
 
-  window.addEventListener('stillnote:dictation-ended', event => {
-    isRecording = false;
-    const button = $('#dictate-button');
-    if (button) { button.classList.remove('is-recording'); button.innerHTML = '<span>◉</span><span class="action-label">Dictate</span>'; }
-    if (event.detail) toast(String(event.detail));
-  });
+  async function removeNoteAttachment(id) {
+    const note = activeNote();
+    if (!note) return;
+    note.attachments = (note.attachments || []).filter(attachment => attachment.id !== id);
+    note.updatedAt = Date.now();
+    const stillUsed = data.notes.some(item => (item.attachments || []).some(attachment => attachment.id === id));
+    if (!stillUsed) await deleteMediaRecord(id).catch(() => {});
+    saveData();
+    renderWorkspace();
+    toast('Attachment removed.');
+  }
 
-  window.addEventListener('stillnote:file-saved', event => {
-    toast(`${String(event.detail || 'File')} saved.`);
-  });
-
-  window.addEventListener('stillnote:file-save-error', event => {
-    toast(String(event.detail || 'Could not save the file.'));
-  });
+  async function deleteUnusedMedia(ids) {
+    for (const id of new Set(ids)) {
+      if (!data.notes.some(note => (note.attachments || []).some(attachment => attachment.id === id))) {
+        await deleteMediaRecord(id).catch(() => {});
+      }
+    }
+  }
 
   function updateFocusDisplay() {
     if (state.timer.running && state.timer.deadline) {
@@ -755,10 +879,43 @@
     updateFocusDisplay();
   }
 
-  function exportBackup() {
-    const payload = { app: 'Stillnote', version: 1, exportedAt: new Date().toISOString(), ...data };
-    downloadText(`stillnote-backup-${localDayKey()}.json`, JSON.stringify(payload, null, 2), 'application/json');
-    toast('Backup exported. Keep the file somewhere safe.');
+  function blobToDataUrl(blob) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = () => reject(reader.error || new Error('Could not read an attachment.'));
+      reader.readAsDataURL(blob);
+    });
+  }
+
+  function dataUrlToBlob(value) {
+    const [header, encoded] = String(value || '').split(',', 2);
+    if (!header?.startsWith('data:') || !encoded) throw new Error('A backup attachment is invalid.');
+    const type = header.slice(5).split(';')[0] || 'application/octet-stream';
+    const binary = atob(encoded);
+    const bytes = new Uint8Array(binary.length);
+    for (let index = 0; index < binary.length; index++) bytes[index] = binary.charCodeAt(index);
+    return new Blob([bytes], { type });
+  }
+
+  async function exportBackup() {
+    try {
+      const media = [];
+      const saved = new Set();
+      for (const note of data.notes) {
+        for (const attachment of note.attachments || []) {
+          if (saved.has(attachment.id)) continue;
+          saved.add(attachment.id);
+          const record = await readMediaRecord(attachment.id);
+          if (record?.blob) media.push({ id: attachment.id, name: attachment.name, type: attachment.type, data: await blobToDataUrl(record.blob) });
+        }
+      }
+      const payload = { app: 'Stillnote', version: 1, exportedAt: new Date().toISOString(), ...data, media };
+      downloadText(`stillnote-backup-${localDayKey()}.json`, JSON.stringify(payload), 'application/json');
+      toast(`Backup exported with ${media.length} ${media.length === 1 ? 'file' : 'files'}. Keep it somewhere safe.`);
+    } catch (error) {
+      toast('Could not export the backup. Check available memory and browser storage.');
+    }
   }
 
   async function importBackup(file) {
@@ -767,12 +924,24 @@
       const imported = JSON.parse(await file.text());
       if (!Array.isArray(imported.notes) || !Array.isArray(imported.folders)) throw new Error('This file does not look like a Stillnote backup.');
       if (!window.confirm(`Import ${imported.notes.length} notes and replace the current workspace on this device? Export a backup first if you want to keep both.`)) return;
-      data.notes = imported.notes; data.folders = imported.folders.length ? imported.folders : ['General'];
+      const oldMediaIds = data.notes.flatMap(note => (note.attachments || []).map(item => item.id));
+      if (Array.isArray(imported.media)) {
+        for (const item of imported.media) {
+          if (!item?.id || typeof item.data !== 'string') continue;
+          const blob = dataUrlToBlob(item.data);
+          if (!blob.type.startsWith('image/') && !blob.type.startsWith('video/')) continue;
+          await writeMediaRecord({ id: item.id, blob });
+        }
+      }
+      data.notes = imported.notes.map(note => ({ ...note, attachments: Array.isArray(note.attachments) ? note.attachments : [] }));
+      data.folders = imported.folders.length ? imported.folders : ['General'];
       data.flashcards = Array.isArray(imported.flashcards) ? imported.flashcards : [];
       data.settings = { ...data.settings, ...(imported.settings || {}) };
+      if (!THEMES.includes(data.settings.theme)) data.settings.theme = 'light';
+      setTheme(data.settings.theme);
       data.stats = { ...data.stats, ...(imported.stats || {}) };
       state.selectedNoteId = data.notes.find(note => !note.isDeleted)?.id || null;
-      state.folder = 'All notes'; state.view = 'notes'; state.mobileEditorOpen = false; saveData(); closeModal(); renderWorkspace(); toast('Backup imported.');
+      state.folder = 'All notes'; state.view = 'notes'; state.mobileEditorOpen = false; saveData(); deleteUnusedMedia(oldMediaIds); closeModal(); renderWorkspace(); toast('Backup imported.');
     } catch (error) { toast(error.message || 'Could not read this backup file.'); }
   }
 
@@ -784,6 +953,8 @@
     if (target.dataset.folder) { state.view = 'notes'; state.mobileEditorOpen = false; state.folder = target.dataset.folder; state.listFilter = 'all'; renderWorkspace(); return; }
     if (target.dataset.noteId) { state.selectedNoteId = target.dataset.noteId; state.mobileEditorOpen = true; state.preview = false; renderWorkspace(); return; }
     if (target.id === 'mobile-editor-back') { state.mobileEditorOpen = false; saveData(); renderWorkspace(); return; }
+    if (target.id === 'add-media-button') { $('#note-media-input')?.click(); return; }
+    if (target.dataset.removeAttachment) { removeNoteAttachment(target.dataset.removeAttachment); return; }
     if (target.dataset.filter) { state.listFilter = target.dataset.filter; renderWorkspace(); return; }
     if (target.id === 'new-note-small' || target.id === 'empty-new-note') { makeNote('', '', currentFolderForNewNote()); return; }
     if (target.id === 'dictate-button') { startDictation(); return; }
@@ -797,9 +968,9 @@
     if (target.dataset.deleteCard) { data.flashcards = data.flashcards.filter(card => card.id !== target.dataset.deleteCard); state.currentCardId = null; saveData(); renderWorkspace(); toast('Flashcard deleted.'); return; }
     if (target.id === 'focus-start') { startTimer(); return; }
     if (target.id === 'focus-reset') { resetTimer(); return; }
-    if (target.id === 'empty-trash') { if (window.confirm('Permanently delete all notes in recently deleted? This cannot be undone.')) { data.notes = data.notes.filter(note => !note.isDeleted); saveData(); renderWorkspace(); toast('Trash emptied.'); } return; }
+    if (target.id === 'empty-trash') { if (window.confirm('Permanently delete all notes in recently deleted? This cannot be undone.')) { const ids = data.notes.filter(note => note.isDeleted).flatMap(note => (note.attachments || []).map(item => item.id)); data.notes = data.notes.filter(note => !note.isDeleted); saveData(); deleteUnusedMedia(ids); renderWorkspace(); toast('Trash emptied.'); } return; }
     if (target.dataset.restoreNote) { const note = data.notes.find(item => item.id === target.dataset.restoreNote); if (note) { note.isDeleted = false; delete note.deletedAt; note.updatedAt = Date.now(); saveData(); renderWorkspace(); toast('Note restored.'); } return; }
-    if (target.dataset.deleteForever) { if (window.confirm('Permanently delete this note? This cannot be undone.')) { data.notes = data.notes.filter(item => item.id !== target.dataset.deleteForever); saveData(); renderWorkspace(); toast('Note permanently deleted.'); } return; }
+    if (target.dataset.deleteForever) { if (window.confirm('Permanently delete this note? This cannot be undone.')) { const note = data.notes.find(item => item.id === target.dataset.deleteForever); const ids = (note?.attachments || []).map(item => item.id); data.notes = data.notes.filter(item => item.id !== target.dataset.deleteForever); saveData(); deleteUnusedMedia(ids); renderWorkspace(); toast('Note permanently deleted.'); } return; }
   });
 
   workspace.addEventListener('input', event => {
@@ -809,7 +980,11 @@
   });
 
   workspace.addEventListener('change', event => {
-    if (event.target.id === 'mobile-folder-select') {
+    if (event.target.id === 'note-media-input') {
+      const files = [...(event.target.files || [])];
+      event.target.value = '';
+      attachMediaFiles(files);
+    } else if (event.target.id === 'mobile-folder-select') {
       if (event.target.value === '__new__') { openFolderModal(); return; }
       state.folder = event.target.value; state.listFilter = 'all'; renderWorkspace();
     } else if (event.target.id === 'note-folder-select') {
@@ -861,7 +1036,7 @@
     if (target.id === 'new-note-button') { makeNote('', '', currentFolderForNewNote()); return; }
     if (target.id === 'add-folder-button') { openFolderModal(); return; }
     if (target.id === 'settings-button' || target.id === 'profile-button') { openSettings(); return; }
-    if (target.id === 'theme-toggle') { setTheme(data.settings.theme === 'dark' ? 'light' : 'dark'); return; }
+    if (target.id === 'theme-toggle') { cycleTheme(); return; }
     if (target.id === 'search-open') { openSearch(); return; }
   });
 
@@ -882,19 +1057,14 @@
     }
   });
 
-  window.stillnoteHandleBack = function () {
-    if (overlayRoot.innerHTML) { closeModal(); return true; }
-    if (state.view === 'notes' && state.mobileEditorOpen) { state.mobileEditorOpen = false; saveData(); renderWorkspace(); return true; }
-    return false;
-  };
-
   window.addEventListener('resize', renderMobileNav);
   window.addEventListener('beforeunload', saveData);
   document.addEventListener('visibilitychange', () => { if (document.hidden) saveData(); });
-  if (window.StillnoteAndroid) document.documentElement.dataset.platform = 'android';
   document.documentElement.dataset.theme = data.settings.theme;
-  $('#theme-icon').textContent = data.settings.theme === 'dark' ? '☀' : '☾';
-  if (window.StillnoteAndroid && typeof window.StillnoteAndroid.setTheme === 'function') window.StillnoteAndroid.setTheme(data.settings.theme);
+  const initialThemeColor = $('meta[name="theme-color"]');
+  if (initialThemeColor) initialThemeColor.content = getComputedStyle(document.documentElement).getPropertyValue('--page').trim();
+  $('#theme-icon').textContent = '◐';
+  $('#theme-toggle').title = `Theme: ${THEME_LABELS[data.settings.theme]} · click to change`;
   setInterval(updateFocusDisplay, 300);
   renderWorkspace();
   if ('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('./service-worker.js').catch(() => {});
