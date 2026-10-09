@@ -4,15 +4,19 @@
   <launchable type="desktop-id">io.github.mk876543yoblip.stillnote.desktop</launchable>
   <name>Stillnote</name>
   <summary>Private local notes and study workspace</summary>
+  <icon type="stock">io.github.mk876543yoblip.stillnote</icon>
   <metadata_license>CC0-1.0</metadata_license>
   <project_license>MIT</project_license>
+  <categories>
+    <category>Office</category>
+  </categories>
   <developer id="io.github.mk876543yoblip">
     <name>Stillnote contributors</name>
   </developer>
   <description>
     <p>A private workspace for notes, collections, flashcards, focus sessions, and study insights. Notes and attached media are saved on this device.</p>
   </description>
-  <url type="homepage">https://github.com/mk876543yo-blip/stillnote</url>
+  <url type="homepage">https://mk876543yo-blip.github.io/stillnote/</url>
   <content_rating type="oars-1.1"/>
   <supports>
     <control>keyboard</control>
