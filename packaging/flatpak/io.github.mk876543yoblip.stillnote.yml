@@ -36,8 +36,7 @@ modules:
     sources:
       - type: dir
         path: ../..
-      - type: file
-        path: cargo-sources.json
+      - cargo-sources.json
       - type: inline
         contents: |
           [source.crates-io]
