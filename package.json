@@ -10,6 +10,6 @@
     "build:linux": "tauri build --bundles appimage,deb,rpm"
   },
   "devDependencies": {
-    "@tauri-apps/cli": "2.12.1"
+    "@tauri-apps/cli": "2.12.4"
   }
 }
